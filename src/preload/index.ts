@@ -1,12 +1,20 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
+const wrappers = new Map<(...args: unknown[]) => void, (...args: unknown[]) => void>()
+
 const electronAPI = {
   invoke: (channel: string, ...args: unknown[]) => ipcRenderer.invoke(channel, ...args),
   on: (channel: string, cb: (...args: unknown[]) => void) => {
-    ipcRenderer.on(channel, (_event, ...args) => cb(...args))
+    const wrapper = (_event: Electron.IpcRendererEvent, ...args: unknown[]) => cb(...args)
+    wrappers.set(cb, wrapper)
+    ipcRenderer.on(channel, wrapper)
   },
   off: (channel: string, cb: (...args: unknown[]) => void) => {
-    ipcRenderer.removeListener(channel, cb as never)
+    const wrapper = wrappers.get(cb)
+    if (wrapper) {
+      ipcRenderer.removeListener(channel, wrapper as never)
+      wrappers.delete(cb)
+    }
   }
 }
 

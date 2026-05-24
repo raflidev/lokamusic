@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, onDestroy } from 'svelte'
   import Sidebar from './lib/components/Sidebar.svelte'
   import BottomBar from './lib/components/BottomBar.svelte'
   import LibraryView from './lib/views/LibraryView.svelte'
@@ -15,6 +15,21 @@
   import { playlistStore } from './lib/stores/playlists.svelte'
   import type { Song, WatchedFolder, ScanEvent, Playlist } from '../../../preload/index.d'
 
+  function onScanProgress(...args: unknown[]) {
+    const progress = args[0] as { folderId: string; scanned: number; total: number; percent: number }
+    ui.setScanProgress(progress)
+  }
+  function onScanComplete(...args: unknown[]) {
+    const data = args[0] as { folderId: string; songs: Song[]; folders: WatchedFolder[] }
+    library.setSongs(data.songs ?? [])
+    library.setFolders(data.folders ?? [])
+    ui.setScanProgress(null)
+  }
+  function onSongsUpdated(...args: unknown[]) {
+    const songs = args[0] as Song[]
+    library.setSongs(songs ?? [])
+  }
+
   onMount(async () => {
     const [songs, folders, playlists] = await Promise.all([
       window.electronAPI.invoke('library:get-all-songs') as Promise<Song[]>,
@@ -25,22 +40,15 @@
     library.setFolders(folders ?? [])
     playlistStore.set(playlists ?? [])
 
-    window.electronAPI.on('library:scan-progress', (...args: unknown[]) => {
-      const progress = args[0] as { folderId: string; scanned: number; total: number; percent: number }
-      ui.setScanProgress(progress)
-    })
+    window.electronAPI.on('library:scan-progress', onScanProgress)
+    window.electronAPI.on('library:scan-complete', onScanComplete)
+    window.electronAPI.on('library:songs-updated', onSongsUpdated)
+  })
 
-    window.electronAPI.on('library:scan-complete', (...args: unknown[]) => {
-      const data = args[0] as { folderId: string; songs: Song[]; folders: WatchedFolder[] }
-      library.setSongs(data.songs ?? [])
-      library.setFolders(data.folders ?? [])
-      ui.setScanProgress(null)
-    })
-
-    window.electronAPI.on('library:songs-updated', (...args: unknown[]) => {
-      const songs = args[0] as Song[]
-      library.setSongs(songs ?? [])
-    })
+  onDestroy(() => {
+    window.electronAPI.off('library:scan-progress', onScanProgress)
+    window.electronAPI.off('library:scan-complete', onScanComplete)
+    window.electronAPI.off('library:songs-updated', onSongsUpdated)
   })
 </script>
 

@@ -5,7 +5,7 @@ import * as mm from 'music-metadata'
 import type { Song } from './store'
 
 const AUDIO_EXTENSIONS = new Set(['.mp3', '.flac', '.wav', '.ogg', '.m4a', '.aac', '.wma', '.opus'])
-const MAX_ART_BYTES = 500 * 1024
+const MAX_ART_BYTES = 5 * 1024 * 1024
 
 function collectAudioFiles(dir: string): string[] {
   const results: string[] = []
@@ -48,7 +48,8 @@ export async function readFileMeta(filePath: string): Promise<Song> {
     const cover = mm.selectCover(common.picture)
     if (cover && cover.data.length <= MAX_ART_BYTES) {
       const b64 = Buffer.from(cover.data).toString('base64')
-      albumArt = `data:${cover.format};base64,${b64}`
+      const mime = cover.format === 'image/jpg' ? 'image/jpeg' : (cover.format || 'image/jpeg')
+      albumArt = `data:${mime};base64,${b64}`
     }
 
     // prefer .lrc sidecar (has timestamps) over embedded lyrics

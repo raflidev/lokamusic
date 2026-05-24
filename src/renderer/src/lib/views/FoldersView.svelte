@@ -5,6 +5,8 @@
   import { ui } from '../stores/ui.svelte'
   import type { WatchedFolder } from '../../../../../preload/index.d'
 
+  let folderToRemove = $state<WatchedFolder | null>(null)
+
   function formatBytes(b: number): string {
     if (!b) return '0 B'
     if (b < 1024) return `${b} B`
@@ -37,9 +39,12 @@
     await window.electronAPI.invoke('library:scan-folder', id)
   }
 
-  async function removeFolder(id: string) {
-    await window.electronAPI.invoke('library:remove-folder', id)
+  async function confirmRemove() {
+    if (!folderToRemove) return
+    const id = folderToRemove.id
+    folderToRemove = null
     library.removeFolder(id)
+    await window.electronAPI.invoke('library:remove-folder', id)
   }
 </script>
 
@@ -121,7 +126,7 @@
               <button class="icon-action" onclick={() => rescanFolder(folder.id)} title="Rescan">
                 <Icon name="refresh" size={14} />
               </button>
-              <button class="icon-action danger" onclick={() => removeFolder(folder.id)} title="Remove">
+              <button class="icon-action danger" onclick={() => folderToRemove = folder} title="Remove">
                 <Icon name="trash" size={14} />
               </button>
             </div>
@@ -164,6 +169,23 @@
     {/if}
   </div>
 </div>
+
+{#if folderToRemove}
+  <div class="modal-backdrop" onclick={() => folderToRemove = null} role="presentation">
+    <div class="modal" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+      <div class="modal-icon"><Icon name="trash" size={22} /></div>
+      <h3 class="modal-title">Remove Folder</h3>
+      <p class="modal-body">
+        <strong>{folderToRemove.name}</strong> will be removed from your library along with all its tracks.
+        Files on disk will not be deleted.
+      </p>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" onclick={() => folderToRemove = null}>Cancel</button>
+        <button class="modal-btn confirm" onclick={confirmRemove}>Remove</button>
+      </div>
+    </div>
+  </div>
+{/if}
 
 <style>
   .folders-view {
@@ -540,4 +562,89 @@
     background: var(--error-container);
     color: var(--error);
   }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(2px);
+  }
+
+  .modal {
+    background: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-lg);
+    padding: 28px 32px;
+    width: 360px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .modal-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--error-container);
+    color: var(--error);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--on-surface);
+    letter-spacing: -0.01em;
+  }
+
+  .modal-body {
+    font-size: 13px;
+    color: var(--on-surface-variant);
+    line-height: 1.6;
+  }
+
+  .modal-body strong {
+    color: var(--on-surface);
+    font-weight: 500;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    width: 100%;
+  }
+
+  .modal-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.12s, color 0.12s;
+  }
+
+  .modal-btn.cancel {
+    background: var(--surface-container);
+    color: var(--on-surface-variant);
+    border: 1px solid var(--outline-variant);
+  }
+
+  .modal-btn.cancel:hover { background: var(--surface-container-high); color: var(--on-surface); }
+
+  .modal-btn.confirm {
+    background: var(--error-container);
+    color: var(--error);
+  }
+
+  .modal-btn.confirm:hover { opacity: 0.88; }
 </style>

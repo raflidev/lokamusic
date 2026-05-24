@@ -94,9 +94,14 @@ function registerIpcHandlers(): void {
   })
 
   ipcMain.handle('library:remove-folder', (_, folderId: string) => {
+    const folder = store.get('folders').find(f => f.id === folderId)
     const folders = store.get('folders').filter(f => f.id !== folderId)
     store.set('folders', folders)
-    // keep songs — they still exist on disk. User can rescan to refresh.
+    if (folder) {
+      const songs = store.get('songs').filter(s => !s.path.startsWith(folder.path))
+      store.set('songs', songs)
+      mainWindow?.webContents.send('library:songs-updated', songs)
+    }
   })
 
   ipcMain.handle('library:scan-folder', (_, folderId: string) => {
@@ -195,45 +200,67 @@ function registerIpcHandlers(): void {
   })
 }
 
+let scanQueue = Promise.resolve()
+
 async function doScan(folderId: string, folderPath: string): Promise<void> {
-  const { songs: newSongs, errors } = await scanFolder(folderPath, (scanned, total, percent) => {
-    mainWindow?.webContents.send('library:scan-progress', { folderId, scanned, total, percent })
-  })
+  scanQueue = scanQueue.then(() => runScan(folderId, folderPath))
+  return scanQueue
+}
 
-  // merge: update existing songs with fresh metadata, preserve user data (liked/playCount/lastPlayed)
-  const existing = store.get('songs')
-  const newSongsMap = new Map(newSongs.map(s => [s.id, s]))
-  const updated = existing.map(s => {
-    const fresh = newSongsMap.get(s.id)
-    if (!fresh) return s
-    return { ...fresh, liked: s.liked, playCount: s.playCount, lastPlayed: s.lastPlayed }
-  })
-  const existingIds = new Set(existing.map(s => s.id))
-  const merged = [...updated, ...newSongs.filter(s => !existingIds.has(s.id))]
-  store.set('songs', merged)
+async function runScan(folderId: string, folderPath: string): Promise<void> {
+  try {
+    const { songs: newSongs, errors } = await scanFolder(folderPath, (scanned, total, percent) => {
+      mainWindow?.webContents.send('library:scan-progress', { folderId, scanned, total, percent })
+    })
 
-  // update folder record
-  const folders = store.get('folders').map(f =>
-    f.id === folderId
-      ? { ...f, songCount: newSongs.length, sizeBytes: getFolderSize(folderPath), lastScanned: Date.now() }
-      : f
-  )
-  store.set('folders', folders)
+    // re-read store after scan completes to pick up any changes (likes/plays) made during scan
+    const existing = store.get('songs')
+    const existingMap = new Map(existing.map(s => [s.id, s]))
+    // keep songs from OTHER folders as-is; for THIS folder, only keep what the scan found
+    const kept = existing.filter(s => !s.path.startsWith(folderPath))
+    const updated = newSongs.map(s => {
+      const prev = existingMap.get(s.id)
+      if (!prev) return s
+      return { ...s, liked: prev.liked, playCount: prev.playCount, lastPlayed: prev.lastPlayed }
+    })
+    const merged = [...kept, ...updated]
+    store.set('songs', merged)
 
-  mainWindow?.webContents.send('library:scan-complete', {
-    folderId,
-    songs: merged,
-    folders: store.get('folders')
-  })
+    const folders = store.get('folders').map(f =>
+      f.id === folderId
+        ? { ...f, songCount: newSongs.length, sizeBytes: getFolderSize(folderPath), lastScanned: Date.now() }
+        : f
+    )
+    store.set('folders', folders)
 
-  const history = store.get('scanHistory')
-  const folder = folders.find(f => f.id === folderId)
-  history.unshift({ timestamp: Date.now(), folderPath: folder?.path ?? folderPath, success: newSongs.length, errors })
-  store.set('scanHistory', history.slice(0, 50))
+    mainWindow?.webContents.send('library:scan-complete', {
+      folderId,
+      songs: merged,
+      folders: store.get('folders')
+    })
+
+    const history = store.get('scanHistory')
+    const folder = folders.find(f => f.id === folderId)
+    history.unshift({ timestamp: Date.now(), folderPath: folder?.path ?? folderPath, success: newSongs.length, errors })
+    store.set('scanHistory', history.slice(0, 50))
+  } catch {
+    mainWindow?.webContents.send('library:scan-complete', {
+      folderId,
+      songs: store.get('songs'),
+      folders: store.get('folders')
+    })
+  }
+}
+
+function purgeOrphanSongs(): void {
+  const folderPaths = store.get('folders').map(f => f.path)
+  const songs = store.get('songs').filter(s => folderPaths.some(fp => s.path.startsWith(fp)))
+  store.set('songs', songs)
 }
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.lokamusic')
+  purgeOrphanSongs()
 
   // Set Dock Icon on macOS
   let iconPath = join(__dirname, '../../public/logo.png')

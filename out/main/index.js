@@ -125,7 +125,7 @@ const store = new Store({
   }
 });
 const AUDIO_EXTENSIONS = /* @__PURE__ */ new Set([".mp3", ".flac", ".wav", ".ogg", ".m4a", ".aac", ".wma", ".opus"]);
-const MAX_ART_BYTES = 500 * 1024;
+const MAX_ART_BYTES = 5 * 1024 * 1024;
 function collectAudioFiles(dir) {
   const results = [];
   try {
@@ -162,7 +162,8 @@ async function readFileMeta(filePath) {
     const cover = mm__namespace.selectCover(common.picture);
     if (cover && cover.data.length <= MAX_ART_BYTES) {
       const b64 = Buffer.from(cover.data).toString("base64");
-      albumArt = `data:${cover.format};base64,${b64}`;
+      const mime = cover.format === "image/jpg" ? "image/jpeg" : cover.format || "image/jpeg";
+      albumArt = `data:${mime};base64,${b64}`;
     }
     const lrcPath = filePath.replace(/\.[^.]+$/, ".lrc");
     if (fs.existsSync(lrcPath)) {
@@ -309,8 +310,14 @@ function registerIpcHandlers() {
     return folder;
   });
   electron.ipcMain.handle("library:remove-folder", (_, folderId) => {
+    const folder = store.get("folders").find((f) => f.id === folderId);
     const folders = store.get("folders").filter((f) => f.id !== folderId);
     store.set("folders", folders);
+    if (folder) {
+      const songs = store.get("songs").filter((s) => !s.path.startsWith(folder.path));
+      store.set("songs", songs);
+      mainWindow?.webContents.send("library:songs-updated", songs);
+    }
   });
   electron.ipcMain.handle("library:scan-folder", (_, folderId) => {
     const folder = store.get("folders").find((f) => f.id === folderId);
@@ -390,36 +397,55 @@ function registerIpcHandlers() {
     store.set("playlists", playlists);
   });
 }
+let scanQueue = Promise.resolve();
 async function doScan(folderId, folderPath) {
-  const { songs: newSongs, errors } = await scanFolder(folderPath, (scanned, total, percent) => {
-    mainWindow?.webContents.send("library:scan-progress", { folderId, scanned, total, percent });
-  });
-  const existing = store.get("songs");
-  const newSongsMap = new Map(newSongs.map((s) => [s.id, s]));
-  const updated = existing.map((s) => {
-    const fresh = newSongsMap.get(s.id);
-    if (!fresh) return s;
-    return { ...fresh, liked: s.liked, playCount: s.playCount, lastPlayed: s.lastPlayed };
-  });
-  const existingIds = new Set(existing.map((s) => s.id));
-  const merged = [...updated, ...newSongs.filter((s) => !existingIds.has(s.id))];
-  store.set("songs", merged);
-  const folders = store.get("folders").map(
-    (f) => f.id === folderId ? { ...f, songCount: newSongs.length, sizeBytes: getFolderSize(folderPath), lastScanned: Date.now() } : f
-  );
-  store.set("folders", folders);
-  mainWindow?.webContents.send("library:scan-complete", {
-    folderId,
-    songs: merged,
-    folders: store.get("folders")
-  });
-  const history = store.get("scanHistory");
-  const folder = folders.find((f) => f.id === folderId);
-  history.unshift({ timestamp: Date.now(), folderPath: folder?.path ?? folderPath, success: newSongs.length, errors });
-  store.set("scanHistory", history.slice(0, 50));
+  scanQueue = scanQueue.then(() => runScan(folderId, folderPath));
+  return scanQueue;
+}
+async function runScan(folderId, folderPath) {
+  try {
+    const { songs: newSongs, errors } = await scanFolder(folderPath, (scanned, total, percent) => {
+      mainWindow?.webContents.send("library:scan-progress", { folderId, scanned, total, percent });
+    });
+    const existing = store.get("songs");
+    const existingMap = new Map(existing.map((s) => [s.id, s]));
+    const kept = existing.filter((s) => !s.path.startsWith(folderPath));
+    const updated = newSongs.map((s) => {
+      const prev = existingMap.get(s.id);
+      if (!prev) return s;
+      return { ...s, liked: prev.liked, playCount: prev.playCount, lastPlayed: prev.lastPlayed };
+    });
+    const merged = [...kept, ...updated];
+    store.set("songs", merged);
+    const folders = store.get("folders").map(
+      (f) => f.id === folderId ? { ...f, songCount: newSongs.length, sizeBytes: getFolderSize(folderPath), lastScanned: Date.now() } : f
+    );
+    store.set("folders", folders);
+    mainWindow?.webContents.send("library:scan-complete", {
+      folderId,
+      songs: merged,
+      folders: store.get("folders")
+    });
+    const history = store.get("scanHistory");
+    const folder = folders.find((f) => f.id === folderId);
+    history.unshift({ timestamp: Date.now(), folderPath: folder?.path ?? folderPath, success: newSongs.length, errors });
+    store.set("scanHistory", history.slice(0, 50));
+  } catch {
+    mainWindow?.webContents.send("library:scan-complete", {
+      folderId,
+      songs: store.get("songs"),
+      folders: store.get("folders")
+    });
+  }
+}
+function purgeOrphanSongs() {
+  const folderPaths = store.get("folders").map((f) => f.path);
+  const songs = store.get("songs").filter((s) => folderPaths.some((fp) => s.path.startsWith(fp)));
+  store.set("songs", songs);
 }
 electron.app.whenReady().then(() => {
   electronApp.setAppUserModelId("com.lokamusic");
+  purgeOrphanSongs();
   let iconPath = path.join(__dirname, "../../public/logo.png");
   if (!fs.existsSync(iconPath)) {
     iconPath = path.join(__dirname, "../renderer/logo.png");

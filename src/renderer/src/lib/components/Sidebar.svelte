@@ -129,6 +129,13 @@
       {/each}
     {/if}
   </div>
+
+  <div class="star-section">
+    <button class="star-btn" onclick={() => window.open('https://github.com/raflidev/lokamusic', '_blank')}>
+      <Icon name="github" size={14} />
+      <span>Star Repository</span>
+    </button>
+  </div>
 </aside>
 
 <style>
@@ -302,5 +309,30 @@
     overflow-y: auto;
     max-height: 280px;
     min-height: 0;
+    padding-bottom: 8px;
+  }
+
+  .star-section {
+    padding: 7% 12px 0;
+    border-top: 1px solid var(--outline-variant);
+    margin-top: auto;
+    flex-shrink: 0;
+  }
+
+  .star-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: var(--radius);
+    font-size: 12px;
+    color: var(--outline);
+    transition: background 0.12s, color 0.12s;
+  }
+
+  .star-btn:hover {
+    background: var(--surface-container);
+    color: var(--on-surface-variant);
   }
 </style>
