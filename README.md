@@ -1,8 +1,14 @@
-# lokamusic
+<p align="center">
+    <img src="public/logo.png" alt="Description" width="100">
+</p>
 
-A local music player desktop app built with Electron, Svelte 5, and TypeScript. Designed around an "Organic Precision" aesthetic — dark, editorial, and tactile.
+<h1 align="center">lokamusic</h1>
+
+A clean, minimal local music player for desktop. scan folders, manage your library, and play your music files offline
 
 ![lokamusic homepage](image.png)
+
+![lokamusic player menu](image-1.png)
 
 ## Features
 
