@@ -173,18 +173,18 @@ a {
     cursor: default;
   }
 
-  .logo-img.svelte-1p8bvkj {
+  /* (unused) .logo-img {
     width: 26px;
     height: 26px;
     object-fit: cover;
     border-radius: var(--radius);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--outline-variant);
     transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
+  }*/
 
-  .logo.svelte-1p8bvkj:hover .logo-img:where(.svelte-1p8bvkj) {
+  /* (unused) .logo:hover .logo-img {
     transform: scale(1.08) rotate(15deg);
-  }
+  }*/
 
   .nav.svelte-1p8bvkj {
     display: flex;

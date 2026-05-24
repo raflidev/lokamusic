@@ -1,4 +1,4 @@
-# Lokamusic
+# lokamusic
 
 A local music player desktop app built with Electron, Svelte 5, and TypeScript. Designed around an "Organic Precision" aesthetic — dark, editorial, and tactile.
 

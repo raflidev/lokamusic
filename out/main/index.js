@@ -256,7 +256,7 @@ function createWindow() {
     titleBarStyle: "hiddenInset",
     backgroundColor: "#111316",
     icon: iconImage,
-    title: "LokaMusic",
+    title: "lokamusic",
     webPreferences: {
       preload: path.join(__dirname, "../preload/index.js"),
       sandbox: false,

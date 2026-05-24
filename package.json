@@ -1,7 +1,7 @@
 {
   "name": "lokamusic",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
@@ -32,7 +32,7 @@
   },
   "build": {
     "appId": "com.lokamusic",
-    "productName": "LokaMusic",
+    "productName": "lokamusic",
     "directories": {
       "output": "dist"
     },
