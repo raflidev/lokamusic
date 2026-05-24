@@ -39,7 +39,6 @@
 
 <aside class="sidebar">
   <div class="logo">
-    <img src="/logo.png" alt="LokaMusic Logo" class="logo-img" />
     <span>lokamusic</span>
   </div>
 

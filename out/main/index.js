@@ -238,7 +238,7 @@ function getFolderSize(dirPath) {
   }
   return size;
 }
-electron.app.name = "LokaMusic";
+electron.app.name = "lokamusic";
 let mainWindow = null;
 function createWindow() {
   let iconPath = path.join(__dirname, "../../public/logo.png");

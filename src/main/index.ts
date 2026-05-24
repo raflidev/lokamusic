@@ -7,7 +7,7 @@ import store from './services/store'
 import { scanFolder, readFileMeta, getFolderSize } from './services/scanner'
 import type { WatchedFolder, Playlist } from './services/store'
 
-app.name = 'LokaMusic'
+app.name = 'lokamusic'
 
 let mainWindow: BrowserWindow | null = null
 
