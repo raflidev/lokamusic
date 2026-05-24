@@ -33,6 +33,11 @@
   "build": {
     "appId": "com.lokamusic",
     "productName": "lokamusic",
+    "publish": {
+      "provider": "github",
+      "owner": "raflidev",
+      "repo": "lokamusic"
+    },
     "directories": {
       "output": "dist"
     },
