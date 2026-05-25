@@ -4317,6 +4317,12 @@ function onMount(fn) {
     });
   }
 }
+function onDestroy(fn) {
+  if (component_context === null) {
+    lifecycle_outside_component();
+  }
+  onMount(() => () => untrack(fn));
+}
 function init_update_callbacks(context) {
   var l = (
     /** @type {ComponentContextLegacy} */
@@ -4366,7 +4372,9 @@ function Icon($$anchor, $$props) {
     expand: "M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3",
     mic: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM8 9h8M8 13h5",
     "more-horizontal": "M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-7 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm14 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z",
-    "list-music": "M3 6h18M3 10h18M3 14h12M3 18h9"
+    "list-music": "M3 6h18M3 10h18M3 14h12M3 18h9",
+    github: "M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22",
+    info: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 8h.01M12 12v4"
   };
   const d = /* @__PURE__ */ user_derived(() => icons[$$props.name] ?? icons["music"]);
   const filled = ["heart-filled", "play", "more-horizontal"];
@@ -4443,7 +4451,7 @@ const library = {
 var root_1$a = /* @__PURE__ */ from_html(`<div class="fallback svelte-1ap7hhk"><!></div>`);
 var root_2$9 = /* @__PURE__ */ from_html(`<img alt="" class="single svelte-1ap7hhk"/>`);
 var root_5$9 = /* @__PURE__ */ from_html(`<img alt="" class="svelte-1ap7hhk"/>`);
-var root_6$5 = /* @__PURE__ */ from_html(`<img alt="" class="svelte-1ap7hhk"/>`);
+var root_6$6 = /* @__PURE__ */ from_html(`<img alt="" class="svelte-1ap7hhk"/>`);
 var root_4$9 = /* @__PURE__ */ from_html(`<div class="cell svelte-1ap7hhk"><!></div>`);
 var root_3$a = /* @__PURE__ */ from_html(`<div class="grid svelte-1ap7hhk"></div>`);
 var root$9 = /* @__PURE__ */ from_html(`<div class="folder-art svelte-1ap7hhk"><!></div>`);
@@ -4499,7 +4507,7 @@ function FolderArt($$anchor, $$props) {
             append($$anchor4, img_1);
           };
           var consequent_3 = ($$anchor4) => {
-            var img_2 = root_6$5();
+            var img_2 = root_6$6();
             template_effect(() => set_attribute(img_2, "src", get(arts)[get(arts).length - 1]));
             append($$anchor4, img_2);
           };
@@ -4626,7 +4634,7 @@ var root_2$8 = /* @__PURE__ */ from_html(`<div class="folder-divider svelte-1p8b
 var root_4$8 = /* @__PURE__ */ from_html(`<div class="new-playlist-input svelte-1p8bvkj"><input type="text" placeholder="Playlist name…" class="svelte-1p8bvkj"/></div>`);
 var root_5$8 = /* @__PURE__ */ from_html(`<p class="empty-playlists svelte-1p8bvkj">No playlists yet</p>`);
 var root_7$6 = /* @__PURE__ */ from_html(`<button><!> <span class="playlist-name-label svelte-1p8bvkj"> </span></button>`);
-var root$8 = /* @__PURE__ */ from_html(`<aside class="sidebar svelte-1p8bvkj"><div class="logo svelte-1p8bvkj"><span>lokamusic</span></div> <nav class="nav svelte-1p8bvkj"></nav> <div class="section library-section svelte-1p8bvkj"><p class="label-sm svelte-1p8bvkj">Your Library</p> <button><!> <span>Liked Songs</span></button> <button><!> <span>Albums</span></button> <button><!> <span>Artists</span></button> <!></div> <div class="section playlists svelte-1p8bvkj"><div class="section-header svelte-1p8bvkj"><p class="label-sm svelte-1p8bvkj">Playlists</p> <button class="icon-btn svelte-1p8bvkj" title="New playlist"><!></button></div> <!> <!></div></aside>`);
+var root$8 = /* @__PURE__ */ from_html(`<aside class="sidebar svelte-1p8bvkj"><div class="logo svelte-1p8bvkj"><span>lokamusic</span></div> <nav class="nav svelte-1p8bvkj"></nav> <div class="section library-section svelte-1p8bvkj"><p class="label-sm svelte-1p8bvkj">Your Library</p> <button><!> <span>Liked Songs</span></button> <button><!> <span>Albums</span></button> <button><!> <span>Artists</span></button> <!></div> <div class="section playlists svelte-1p8bvkj"><div class="section-header svelte-1p8bvkj"><p class="label-sm svelte-1p8bvkj">Playlists</p> <button class="icon-btn svelte-1p8bvkj" title="New playlist"><!></button></div> <!> <!></div> <div class="star-section svelte-1p8bvkj"><button class="star-btn svelte-1p8bvkj"><!> <span>Star Repository</span></button></div></aside>`);
 function Sidebar($$anchor, $$props) {
   push($$props, true);
   const navItems = [
@@ -4779,6 +4787,10 @@ function Sidebar($$anchor, $$props) {
       else $$render(alternate, -1);
     });
   }
+  var div_5 = sibling(div_2, 2);
+  var button_7 = child(div_5);
+  var node_12 = child(button_7);
+  Icon(node_12, { name: "github", size: 14 });
   template_effect(() => {
     classes_1 = set_class(button_1, 1, "nav-item svelte-1p8bvkj", null, classes_1, { active: ui.currentView === "liked" });
     classes_2 = set_class(button_2, 1, "nav-item svelte-1p8bvkj", null, classes_2, { active: ui.currentView === "albums" });
@@ -4791,6 +4803,7 @@ function Sidebar($$anchor, $$props) {
     set(creatingPlaylist, true);
     set(newPlaylistName, "");
   });
+  delegated("click", button_7, () => window.open("https://github.com/raflidev/lokamusic", "_blank"));
   append($$anchor, aside);
   pop();
 }
@@ -5660,9 +5673,12 @@ var root_2$5 = /* @__PURE__ */ from_html(`<div class="folder-card svelte-1enmgjr
 var root_4$5 = /* @__PURE__ */ from_html(`<span class="activity-badge error svelte-1enmgjr"> </span>`);
 var root_5$6 = /* @__PURE__ */ from_html(`<div class="activity-row svelte-1enmgjr"><!> <span class="activity-path svelte-1enmgjr"> </span> <span class="activity-count svelte-1enmgjr"> </span> <span class="activity-date svelte-1enmgjr"> </span></div>`);
 var root_3$6 = /* @__PURE__ */ from_html(`<div class="activity-section"><div class="section-header svelte-1enmgjr"><h3 class="svelte-1enmgjr">Recent Import Activity</h3> <div class="activity-badges svelte-1enmgjr"><span class="activity-badge success svelte-1enmgjr"> </span> <!></div></div> <div class="activity-list svelte-1enmgjr"></div></div>`);
-var root$5 = /* @__PURE__ */ from_html(`<div class="folders-view svelte-1enmgjr"><div class="topbar svelte-1enmgjr"><h1 class="page-title svelte-1enmgjr">File Manager</h1> <div class="topbar-right svelte-1enmgjr"><div class="search-wrap svelte-1enmgjr"><!> <input type="text" placeholder="Search folders…" class="svelte-1enmgjr"/></div> <button class="icon-btn svelte-1enmgjr" title="Settings"><!></button> <button class="icon-btn svelte-1enmgjr" title="Profile"><!></button></div></div> <div class="content svelte-1enmgjr"><div class="hero svelte-1enmgjr"><div class="hero-text"><h2 class="svelte-1enmgjr">Optimize Your Library</h2> <p class="svelte-1enmgjr">lokamusic scans your local directories to build a metadata-rich music library automatically.</p></div> <div class="hero-actions svelte-1enmgjr"><button class="scan-btn svelte-1enmgjr">Scan New Folder <!></button> <div class="secondary-actions svelte-1enmgjr"><button class="secondary-btn svelte-1enmgjr"><!> <span>Import Files</span></button> <button class="secondary-btn disabled svelte-1enmgjr" disabled=""><!> <span>Sync Cloud</span></button></div></div></div> <!> <div class="folders-section"><div class="section-header svelte-1enmgjr"><h3 class="svelte-1enmgjr">Watched Folders</h3> <button class="link-btn svelte-1enmgjr">Manage All Permissions</button></div> <div class="folders-grid svelte-1enmgjr"><!> <button class="folder-card add-card svelte-1enmgjr"><div class="add-icon svelte-1enmgjr"><!></div> <p class="folder-name svelte-1enmgjr">Connect New Folder</p> <p class="folder-meta svelte-1enmgjr">Scan a local directory</p></button></div></div> <!></div></div>`);
+var root_6$5 = /* @__PURE__ */ from_html(`<div class="modal-backdrop svelte-1enmgjr" role="presentation"><div class="modal svelte-1enmgjr" role="dialog" aria-modal="true"><div class="modal-icon svelte-1enmgjr"><!></div> <h3 class="modal-title svelte-1enmgjr">Remove Folder</h3> <p class="modal-body svelte-1enmgjr"><strong class="svelte-1enmgjr"> </strong> will be removed from your library along with all its tracks.
+        Files on disk will not be deleted.</p> <div class="modal-actions svelte-1enmgjr"><button class="modal-btn cancel svelte-1enmgjr">Cancel</button> <button class="modal-btn confirm svelte-1enmgjr">Remove</button></div></div></div>`);
+var root$5 = /* @__PURE__ */ from_html(`<div class="folders-view svelte-1enmgjr"><div class="topbar svelte-1enmgjr"><h1 class="page-title svelte-1enmgjr">File Manager</h1> <div class="topbar-right svelte-1enmgjr"><div class="search-wrap svelte-1enmgjr"><!> <input type="text" placeholder="Search folders…" class="svelte-1enmgjr"/></div> <button class="icon-btn svelte-1enmgjr" title="Settings"><!></button> <button class="icon-btn svelte-1enmgjr" title="Profile"><!></button></div></div> <div class="content svelte-1enmgjr"><div class="hero svelte-1enmgjr"><div class="hero-text"><h2 class="svelte-1enmgjr">Optimize Your Library</h2> <p class="svelte-1enmgjr">lokamusic scans your local directories to build a metadata-rich music library automatically.</p></div> <div class="hero-actions svelte-1enmgjr"><button class="scan-btn svelte-1enmgjr">Scan New Folder <!></button> <div class="secondary-actions svelte-1enmgjr"><button class="secondary-btn svelte-1enmgjr"><!> <span>Import Files</span></button> <button class="secondary-btn disabled svelte-1enmgjr" disabled=""><!> <span>Sync Cloud</span></button></div></div></div> <!> <div class="folders-section"><div class="section-header svelte-1enmgjr"><h3 class="svelte-1enmgjr">Watched Folders</h3> <button class="link-btn svelte-1enmgjr">Manage All Permissions</button></div> <div class="folders-grid svelte-1enmgjr"><!> <button class="folder-card add-card svelte-1enmgjr"><div class="add-icon svelte-1enmgjr"><!></div> <p class="folder-name svelte-1enmgjr">Connect New Folder</p> <p class="folder-meta svelte-1enmgjr">Scan a local directory</p></button></div></div> <!></div></div> <!>`, 1);
 function FoldersView($$anchor, $$props) {
-  push($$props, false);
+  push($$props, true);
+  let folderToRemove = /* @__PURE__ */ state(null);
   function formatBytes(b) {
     if (!b) return "0 B";
     if (b < 1024) return `${b} B`;
@@ -5690,12 +5706,15 @@ function FoldersView($$anchor, $$props) {
   async function rescanFolder(id) {
     await window.electronAPI.invoke("library:scan-folder", id);
   }
-  async function removeFolder(id) {
-    await window.electronAPI.invoke("library:remove-folder", id);
+  async function confirmRemove() {
+    if (!get(folderToRemove)) return;
+    const id = get(folderToRemove).id;
+    set(folderToRemove, null);
     library.removeFolder(id);
+    await window.electronAPI.invoke("library:remove-folder", id);
   }
-  init();
-  var div = root$5();
+  var fragment = root$5();
+  var div = first_child(fragment);
   var div_1 = child(div);
   var div_2 = sibling(child(div_1), 2);
   var div_3 = child(div_2);
@@ -5754,7 +5773,7 @@ function FoldersView($$anchor, $$props) {
   var div_13 = sibling(node_6, 2);
   var div_14 = sibling(child(div_13), 2);
   var node_7 = child(div_14);
-  each(node_7, 1, () => library.folders, index, ($$anchor2, folder) => {
+  each(node_7, 17, () => library.folders, index, ($$anchor2, folder) => {
     var div_15 = root_2$5();
     var div_16 = child(div_15);
     var node_8 = child(div_16);
@@ -5784,7 +5803,7 @@ function FoldersView($$anchor, $$props) {
       [() => formatBytes(get(folder).sizeBytes)]
     );
     delegated("click", button_5, () => rescanFolder(get(folder).id));
-    delegated("click", button_6, () => removeFolder(get(folder).id));
+    delegated("click", button_6, () => set(folderToRemove, get(folder), true));
     append($$anchor2, div_15);
   });
   var button_7 = sibling(node_7, 2);
@@ -5813,7 +5832,7 @@ function FoldersView($$anchor, $$props) {
         });
       }
       var div_23 = sibling(div_21, 2);
-      each(div_23, 5, () => library.scanHistory.slice(0, 10), index, ($$anchor3, event2) => {
+      each(div_23, 21, () => library.scanHistory.slice(0, 10), index, ($$anchor3, event2) => {
         var div_24 = root_5$6();
         var node_14 = child(div_24);
         Icon(node_14, { name: "check", size: 14, class: "check-icon" });
@@ -5840,10 +5859,35 @@ function FoldersView($$anchor, $$props) {
       if (library.scanHistory.length > 0) $$render(consequent_2);
     });
   }
+  var node_15 = sibling(div, 2);
+  {
+    var consequent_3 = ($$anchor2) => {
+      var div_25 = root_6$5();
+      var div_26 = child(div_25);
+      var div_27 = child(div_26);
+      var node_16 = child(div_27);
+      Icon(node_16, { name: "trash", size: 22 });
+      var p_3 = sibling(div_27, 4);
+      var strong = child(p_3);
+      var text_10 = child(strong);
+      var div_28 = sibling(p_3, 2);
+      var button_8 = child(div_28);
+      var button_9 = sibling(button_8, 2);
+      template_effect(() => set_text(text_10, get(folderToRemove).name));
+      delegated("click", div_25, () => set(folderToRemove, null));
+      delegated("click", div_26, (e) => e.stopPropagation());
+      delegated("click", button_8, () => set(folderToRemove, null));
+      delegated("click", button_9, confirmRemove);
+      append($$anchor2, div_25);
+    };
+    if_block(node_15, ($$render) => {
+      if (get(folderToRemove)) $$render(consequent_3);
+    });
+  }
   delegated("click", button_2, scanNewFolder);
   delegated("click", button_3, importFiles);
   delegated("click", button_7, scanNewFolder);
-  append($$anchor, div);
+  append($$anchor, fragment);
   pop();
 }
 delegate(["click"]);
@@ -7312,6 +7356,20 @@ delegate(["click"]);
 var root = /* @__PURE__ */ from_html(`<div class="app-shell svelte-jl6sf1"><div class="main-area svelte-jl6sf1"><!> <main class="view-area svelte-jl6sf1"><!></main> <!></div> <!></div>`);
 function App($$anchor, $$props) {
   push($$props, false);
+  function onScanProgress(...args) {
+    const progress = args[0];
+    ui.setScanProgress(progress);
+  }
+  function onScanComplete(...args) {
+    const data = args[0];
+    library.setSongs(data.songs ?? []);
+    library.setFolders(data.folders ?? []);
+    ui.setScanProgress(null);
+  }
+  function onSongsUpdated(...args) {
+    const songs2 = args[0];
+    library.setSongs(songs2 ?? []);
+  }
   onMount(async () => {
     const [songs2, folders2, playlists2] = await Promise.all([
       window.electronAPI.invoke("library:get-all-songs"),
@@ -7321,20 +7379,14 @@ function App($$anchor, $$props) {
     library.setSongs(songs2 ?? []);
     library.setFolders(folders2 ?? []);
     playlistStore.set(playlists2 ?? []);
-    window.electronAPI.on("library:scan-progress", (...args) => {
-      const progress = args[0];
-      ui.setScanProgress(progress);
-    });
-    window.electronAPI.on("library:scan-complete", (...args) => {
-      const data = args[0];
-      library.setSongs(data.songs ?? []);
-      library.setFolders(data.folders ?? []);
-      ui.setScanProgress(null);
-    });
-    window.electronAPI.on("library:songs-updated", (...args) => {
-      const songs3 = args[0];
-      library.setSongs(songs3 ?? []);
-    });
+    window.electronAPI.on("library:scan-progress", onScanProgress);
+    window.electronAPI.on("library:scan-complete", onScanComplete);
+    window.electronAPI.on("library:songs-updated", onSongsUpdated);
+  });
+  onDestroy(() => {
+    window.electronAPI.off("library:scan-progress", onScanProgress);
+    window.electronAPI.off("library:scan-complete", onScanComplete);
+    window.electronAPI.off("library:songs-updated", onSongsUpdated);
   });
   init();
   var div = root();
