@@ -1,4 +1,4 @@
-import type { Playlist } from '../../../../preload/index.d'
+import type { Playlist } from '../../types'
 
 let playlists = $state<Playlist[]>([])
 

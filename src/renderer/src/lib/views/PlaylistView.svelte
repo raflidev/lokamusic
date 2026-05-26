@@ -4,7 +4,8 @@
   import { player } from '../stores/player.svelte'
   import { ui } from '../stores/ui.svelte'
   import { playlistStore } from '../stores/playlists.svelte'
-  import type { Song, Playlist } from '../../../../../preload/index.d'
+  import type { Song, Playlist } from '../../types'
+  import { api } from '../api'
 
   let hoveredRowId = $state<string | null>(null)
   let editingName = $state(false)
@@ -70,7 +71,7 @@
 
   function playSong(song: Song) {
     player.playSong(song, displaySongs)
-    window.electronAPI.invoke('library:update-play', song.id)
+    api.invoke('library:update-play', song.id)
   }
 
   function formatDuration(s: number): string {
@@ -94,7 +95,7 @@
 
   async function saveNameEdit() {
     if (!playlist || !nameInput.trim()) { editingName = false; return }
-    const updated = await window.electronAPI.invoke('playlist:rename', playlist.id, nameInput.trim()) as Playlist | null
+    const updated = await api.invoke('playlist:rename', playlist.id, nameInput.trim()) as Playlist | null
     if (updated) playlistStore.update(updated)
     editingName = false
   }
@@ -102,14 +103,14 @@
   async function deletePlaylist() {
     if (!playlist) return
     if (!confirm(`Delete playlist "${playlist.name}"?`)) return
-    await window.electronAPI.invoke('playlist:delete', playlist.id)
+    await api.invoke('playlist:delete', playlist.id)
     playlistStore.remove(playlist.id)
     ui.navigate('library')
   }
 
   async function removeSong(songId: string) {
     if (!playlist) return
-    await window.electronAPI.invoke('playlist:remove-song', playlist.id, songId)
+    await api.invoke('playlist:remove-song', playlist.id, songId)
     playlistStore.removeSong(playlist.id, songId)
   }
 </script>

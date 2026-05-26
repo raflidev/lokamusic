@@ -4,7 +4,8 @@
   import { player } from '../stores/player.svelte'
   import { ui } from '../stores/ui.svelte'
   import { playlistStore } from '../stores/playlists.svelte'
-  import type { Song, Playlist } from '../../../../../preload/index.d'
+  import type { Song, Playlist } from '../../types'
+  import { api } from '../api'
 
   let searchQuery = $derived(ui.searchQuery)
   let hoveredRowId = $state<string | null>(null)
@@ -97,7 +98,7 @@
 
   function playSong(song: Song) {
     player.playSong(song, displaySongs)
-    window.electronAPI.invoke('library:update-play', song.id)
+    api.invoke('library:update-play', song.id)
   }
 
   function formatDuration(s: number): string {
@@ -131,16 +132,16 @@
 
   async function addToPlaylist(playlist: Playlist) {
     if (!playlistMenuSongId) return
-    await window.electronAPI.invoke('playlist:add-song', playlist.id, playlistMenuSongId)
+    await api.invoke('playlist:add-song', playlist.id, playlistMenuSongId)
     playlistStore.addSong(playlist.id, playlistMenuSongId)
     closePlaylistMenu()
   }
 
   async function createPlaylistAndAdd() {
     if (!playlistMenuSongId || !newPlaylistName.trim()) return
-    const pl = await window.electronAPI.invoke('playlist:create', newPlaylistName.trim()) as Playlist
+    const pl = await api.invoke('playlist:create', newPlaylistName.trim()) as Playlist
     playlistStore.add(pl)
-    await window.electronAPI.invoke('playlist:add-song', pl.id, playlistMenuSongId)
+    await api.invoke('playlist:add-song', pl.id, playlistMenuSongId)
     playlistStore.addSong(pl.id, playlistMenuSongId)
     closePlaylistMenu()
   }

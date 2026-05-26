@@ -2,7 +2,8 @@
   import Icon from '../components/Icon.svelte'
   import { library } from '../stores/library.svelte'
   import { player } from '../stores/player.svelte'
-  import type { Song } from '../../../../../preload/index.d'
+  import type { Song } from '../../types'
+  import { api } from '../api'
 
   function formatDuration(s: number): string {
     if (!s) return '--'
@@ -16,7 +17,7 @@
   }
 
   async function toggleLike(song: Song) {
-    await window.electronAPI.invoke('library:toggle-like', song.id)
+    await api.invoke('library:toggle-like', song.id)
     library.toggleLike(song.id)
   }
 </script>

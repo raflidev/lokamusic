@@ -3,7 +3,8 @@
   import FolderArt from '../components/FolderArt.svelte'
   import { library } from '../stores/library.svelte'
   import { ui } from '../stores/ui.svelte'
-  import type { WatchedFolder } from '../../../../../preload/index.d'
+  import type { WatchedFolder } from '../../types'
+  import { api } from '../api'
 
   let folderToRemove = $state<WatchedFolder | null>(null)
 
@@ -22,14 +23,14 @@
   }
 
   async function scanNewFolder() {
-    const path = await window.electronAPI.invoke('dialog:select-folder') as string | null
+    const path = await api.invoke('dialog:select-folder') as string | null
     if (!path) return
-    const folder = await window.electronAPI.invoke('library:add-folder', path) as WatchedFolder | null
+    const folder = await api.invoke('library:add-folder', path) as WatchedFolder | null
     if (folder) library.addFolder(folder)
   }
 
   async function rescanFolder(id: string) {
-    await window.electronAPI.invoke('library:scan-folder', id)
+    await api.invoke('library:scan-folder', id)
   }
 
   async function confirmRemove() {
@@ -37,7 +38,7 @@
     const id = folderToRemove.id
     folderToRemove = null
     library.removeFolder(id)
-    await window.electronAPI.invoke('library:remove-folder', id)
+    await api.invoke('library:remove-folder', id)
   }
 </script>
 

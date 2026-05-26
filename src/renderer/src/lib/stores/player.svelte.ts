@@ -1,5 +1,7 @@
 import { untrack } from 'svelte'
-import type { Song } from '../../../../preload/index.d'
+import { convertFileSrc } from '@tauri-apps/api/core'
+import type { Song } from '../../types'
+import { api } from '../api'
 import { library } from './library.svelte'
 
 let currentSong = $state<Song | null>(null)
@@ -56,11 +58,11 @@ export const player = {
 
     currentSong = song
     const a = getAudio()
-    a.src = `file://${song.path}`
+    a.src = convertFileSrc(song.path)
     a.load()
     a.play().catch((err) => console.error('[player] play failed:', err))
 
-    window.electronAPI.invoke('library:update-play', song.id)
+    api.invoke('library:update-play', song.id)
     library.markPlayed(song.id)
   },
 
@@ -112,11 +114,11 @@ export const player = {
     const song = queue[index]
     currentSong = song
     const a = getAudio()
-    a.src = `file://${song.path}`
+    a.src = convertFileSrc(song.path)
     a.load()
     a.play().catch((err) => console.error('[player] play failed:', err))
     library.markPlayed(song.id)
-    window.electronAPI.invoke('library:update-play', song.id)
+    api.invoke('library:update-play', song.id)
   },
 
   setVolume(v: number) {
@@ -162,13 +164,13 @@ $effect.root(() => {
     }
 
     if (!song) {
-      window.electronAPI.invoke('discord:update-presence', null)
+      api.invoke('discord:update-presence', null)
       return
     }
 
     if (!playing) {
       pauseTimer = setTimeout(() => {
-        window.electronAPI.invoke('discord:update-presence', null)
+        api.invoke('discord:update-presence', null)
         pauseTimer = null
       }, 5000)
       return
@@ -177,7 +179,7 @@ $effect.root(() => {
     const ct = untrack(() => currentTime)
     const dur = untrack(() => duration) || song.duration
 
-    window.electronAPI.invoke('discord:update-presence', {
+    api.invoke('discord:update-presence', {
       title: song.title,
       artist: song.artist,
       album: song.album,
