@@ -1,3 +1,4 @@
+import { untrack } from 'svelte'
 import type { Song } from '../../../../preload/index.d'
 import { library } from './library.svelte'
 
@@ -133,3 +134,27 @@ export const player = {
     return next < queue.length ? queue[next] : null
   }
 }
+
+$effect.root(() => {
+  $effect(() => {
+    const song = currentSong
+    const playing = isPlaying
+
+    if (!song) {
+      window.electronAPI.invoke('discord:update-presence', null)
+      return
+    }
+
+    const ct = untrack(() => currentTime)
+    const dur = untrack(() => duration) || song.duration
+
+    window.electronAPI.invoke('discord:update-presence', {
+      title: song.title,
+      artist: song.artist,
+      album: song.album,
+      isPlaying: playing,
+      duration: dur,
+      currentTime: ct,
+    })
+  })
+})
