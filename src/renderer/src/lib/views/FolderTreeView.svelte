@@ -2,7 +2,8 @@
   import Icon from '../components/Icon.svelte'
   import { library } from '../stores/library.svelte'
   import { player } from '../stores/player.svelte'
-  import type { Song, WatchedFolder } from '../../../../../preload/index.d'
+  import type { Song, WatchedFolder } from '../../types'
+  import { api } from '../api'
 
   type Level = { name: string; path: string; folderId?: string }
 
@@ -84,7 +85,7 @@
 
   function playSong(song: Song, queue: Song[]) {
     player.playSong(song, queue)
-    window.electronAPI.invoke('library:update-play', song.id)
+    api.invoke('library:update-play', song.id)
   }
 
   function playAll() {

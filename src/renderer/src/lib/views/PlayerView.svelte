@@ -3,6 +3,7 @@
   import { player } from '../stores/player.svelte'
   import { library } from '../stores/library.svelte'
   import { ui } from '../stores/ui.svelte'
+  import { api } from '../api'
 
   function formatTime(s: number): string {
     if (!s || isNaN(s)) return '0:00'
@@ -13,7 +14,7 @@
 
   async function toggleLike() {
     if (!player.currentSong) return
-    await window.electronAPI.invoke('library:toggle-like', player.currentSong.id)
+    await api.invoke('library:toggle-like', player.currentSong.id)
     library.toggleLike(player.currentSong.id)
   }
 

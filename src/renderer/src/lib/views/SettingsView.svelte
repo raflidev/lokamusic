@@ -1,29 +1,38 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { player } from '../stores/player.svelte'
+  import { api } from '../api'
 
   let discordPresence = $state(true)
+  let toggling = $state(false)
 
   onMount(async () => {
-    const settings = await window.electronAPI.invoke('settings:get') as { discordPresence: boolean }
+    const settings = await api.invoke('settings:get') as { discordPresence: boolean }
     discordPresence = settings.discordPresence ?? true
   })
 
   async function toggleDiscord() {
+    if (toggling) return
+    toggling = true
     discordPresence = !discordPresence
-    await window.electronAPI.invoke('settings:set-discord-presence', discordPresence)
 
-    if (discordPresence && player.currentSong) {
-      const song = player.currentSong
-      window.electronAPI.invoke('discord:update-presence', {
-        title: song.title,
-        artist: song.artist,
-        album: song.album,
-        isPlaying: player.isPlaying,
-        duration: player.duration || song.duration,
-        currentTime: player.currentTime,
-      })
-    }
+    // Fire-and-forget: Discord IPC runs in Rust background thread
+    api.invoke('settings:set-discord-presence', discordPresence).then(() => {
+      if (discordPresence && player.currentSong) {
+        const song = player.currentSong
+        api.invoke('discord:update-presence', {
+          title: song.title,
+          artist: song.artist,
+          album: song.album,
+          isPlaying: player.isPlaying,
+          duration: player.duration || song.duration,
+          currentTime: player.currentTime,
+        })
+      }
+      toggling = false
+    }).catch(() => {
+      toggling = false
+    })
   }
 </script>
 
@@ -35,19 +44,23 @@
   <div class="section">
     <p class="section-title">Integrations</p>
 
-    <div class="setting-row">
+    <div class="setting-row" class:loading={toggling}>
       <div class="setting-info">
         <span class="setting-label">Discord Rich Presence</span>
         <span class="setting-desc">Tampilkan lagu yang sedang diputar di Discord</span>
       </div>
-      <button
-        class="toggle"
-        class:on={discordPresence}
-        onclick={toggleDiscord}
-        aria-label="Toggle Discord Rich Presence"
-      >
-        <span class="thumb"></span>
-      </button>
+      {#if toggling}
+        <span class="spinner" aria-label="Loading…"></span>
+      {:else}
+        <button
+          class="toggle"
+          class:on={discordPresence}
+          onclick={toggleDiscord}
+          aria-label="Toggle Discord Rich Presence"
+        >
+          <span class="thumb"></span>
+        </button>
+      {/if}
     </div>
   </div>
 </div>
@@ -143,5 +156,35 @@
   .toggle.on .thumb {
     transform: translateX(20px);
     background: var(--on-primary);
+  }
+
+  .setting-row.loading {
+    background: linear-gradient(
+      90deg,
+      var(--surface-container) 0%,
+      var(--surface-container-high, color-mix(in srgb, var(--surface-container) 60%, var(--on-surface) 40%)) 50%,
+      var(--surface-container) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .spinner {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--outline);
+    border-top-color: var(--primary);
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 </style>

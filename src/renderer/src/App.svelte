@@ -16,20 +16,18 @@
   import { ui } from './lib/stores/ui.svelte'
   import { player } from './lib/stores/player.svelte'
   import { playlistStore } from './lib/stores/playlists.svelte'
-  import type { Song, WatchedFolder, ScanEvent, Playlist } from '../../../preload/index.d'
+  import { api } from './lib/api'
+  import type { Song, WatchedFolder, Playlist } from './types'
 
-  function onScanProgress(...args: unknown[]) {
-    const progress = args[0] as { folderId: string; scanned: number; total: number; percent: number }
+  function onScanProgress(progress: { folderId: string; scanned: number; total: number; percent: number }) {
     ui.setScanProgress(progress)
   }
-  function onScanComplete(...args: unknown[]) {
-    const data = args[0] as { folderId: string; songs: Song[]; folders: WatchedFolder[] }
+  function onScanComplete(data: { folderId: string; songs: Song[]; folders: WatchedFolder[] }) {
     library.setSongs(data.songs ?? [])
     library.setFolders(data.folders ?? [])
     ui.setScanProgress(null)
   }
-  function onSongsUpdated(...args: unknown[]) {
-    const songs = args[0] as Song[]
+  function onSongsUpdated(songs: Song[]) {
     library.setSongs(songs ?? [])
   }
 
@@ -43,23 +41,23 @@
 
   onMount(async () => {
     const [songs, folders, playlists] = await Promise.all([
-      window.electronAPI.invoke('library:get-all-songs') as Promise<Song[]>,
-      window.electronAPI.invoke('library:get-folders') as Promise<WatchedFolder[]>,
-      window.electronAPI.invoke('playlist:get-all') as Promise<Playlist[]>,
+      api.invoke('library:get-all-songs') as Promise<Song[]>,
+      api.invoke('library:get-folders') as Promise<WatchedFolder[]>,
+      api.invoke('playlist:get-all') as Promise<Playlist[]>,
     ])
     library.setSongs(songs ?? [])
     library.setFolders(folders ?? [])
     playlistStore.set(playlists ?? [])
 
-    window.electronAPI.on('library:scan-progress', onScanProgress)
-    window.electronAPI.on('library:scan-complete', onScanComplete)
-    window.electronAPI.on('library:songs-updated', onSongsUpdated)
+    await api.on('library:scan-progress', onScanProgress as (...args: unknown[]) => void)
+    await api.on('library:scan-complete', onScanComplete as (...args: unknown[]) => void)
+    await api.on('library:songs-updated', onSongsUpdated as (...args: unknown[]) => void)
   })
 
   onDestroy(() => {
-    window.electronAPI.off('library:scan-progress', onScanProgress)
-    window.electronAPI.off('library:scan-complete', onScanComplete)
-    window.electronAPI.off('library:songs-updated', onSongsUpdated)
+    api.off('library:scan-progress', onScanProgress as (...args: unknown[]) => void)
+    api.off('library:scan-complete', onScanComplete as (...args: unknown[]) => void)
+    api.off('library:songs-updated', onSongsUpdated as (...args: unknown[]) => void)
   })
 </script>
 

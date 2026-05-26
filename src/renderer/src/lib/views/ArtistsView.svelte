@@ -3,7 +3,8 @@
   import { library } from '../stores/library.svelte'
   import { player } from '../stores/player.svelte'
   import { ui } from '../stores/ui.svelte'
-  import type { Song } from '../../../../../preload/index.d'
+  import type { Song } from '../../types'
+  import { api } from '../api'
 
   interface Artist {
     name: string
@@ -48,7 +49,7 @@
   function playArtist(artist: Artist, startSong?: Song) {
     const song = startSong ?? artist.songs[0]
     player.playSong(song, artist.songs)
-    window.electronAPI.invoke('library:update-play', song.id)
+    api.invoke('library:update-play', song.id)
   }
 </script>
 

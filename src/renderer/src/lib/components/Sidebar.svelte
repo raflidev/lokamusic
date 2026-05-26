@@ -4,7 +4,8 @@
   import { ui, type View } from '../stores/ui.svelte'
   import { library } from '../stores/library.svelte'
   import { playlistStore } from '../stores/playlists.svelte'
-  import type { Playlist } from '../../../../../preload/index.d'
+  import type { Playlist } from '../../types'
+  import { api } from '../api'
 
   const navItems: { view: View; icon: string; label: string }[] = [
     { view: 'library', icon: 'library', label: 'Library' },
@@ -25,7 +26,7 @@
       creatingPlaylist = false
       return
     }
-    const pl = await window.electronAPI.invoke('playlist:create', newPlaylistName.trim()) as Playlist
+    const pl = await api.invoke('playlist:create', newPlaylistName.trim()) as Playlist
     playlistStore.add(pl)
     newPlaylistName = ''
     creatingPlaylist = false

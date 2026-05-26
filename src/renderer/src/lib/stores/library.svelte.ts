@@ -1,4 +1,4 @@
-import type { Song, WatchedFolder, ScanEvent } from '../../../../preload/index.d'
+import type { Song, WatchedFolder, ScanEvent } from '../../types'
 
 let songs = $state<Song[]>([])
 let folders = $state<WatchedFolder[]>([])

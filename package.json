@@ -2,63 +2,26 @@
   "name": "lokamusic",
   "private": true,
   "version": "1.0.2",
-  "main": "out/main/index.js",
+  "type": "module",
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
-    "start": "electron-vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.app.json",
-    "package:win": "npm run build && electron-builder --win",
-    "package:mac": "npm run build && electron-builder --mac"
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "dev:renderer": "vite",
+    "build:renderer": "vite build",
+    "check": "svelte-check --tsconfig ./tsconfig.web.json",
+    "tauri": "tauri"
   },
   "devDependencies": {
-    "@electron-toolkit/preload": "^3.0.2",
-    "@electron-toolkit/utils": "^4.0.0",
     "@sveltejs/vite-plugin-svelte": "^4.0.4",
+    "@tauri-apps/cli": "^2",
     "@tsconfig/svelte": "^5.0.8",
-    "@types/discord-rpc": "^4.0.10",
     "@types/node": "^24.12.3",
-    "electron": "^42.2.0",
-    "electron-builder": "^26.8.1",
-    "electron-vite": "^5.0.0",
     "svelte": "^5.55.5",
     "svelte-check": "^4.4.8",
     "typescript": "~6.0.2",
     "vite": "^5.4.21"
   },
   "dependencies": {
-    "discord-rpc": "^4.0.1",
-    "electron-store": "^8.2.0",
-    "geist": "^1.7.1",
-    "music-metadata": "^7.14.0"
-  },
-  "build": {
-    "appId": "com.lokamusic",
-    "productName": "lokamusic",
-    "publish": {
-      "provider": "github",
-      "owner": "raflidev",
-      "repo": "lokamusic"
-    },
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "out/**/*"
-    ],
-    "win": {
-      "target": [
-        "nsis",
-        "zip"
-      ],
-      "icon": "public/logo.png"
-    },
-    "mac": {
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "icon": "public/logo.png"
-    }
+    "@tauri-apps/api": "^2"
   }
 }
