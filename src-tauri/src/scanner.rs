@@ -31,7 +31,7 @@ pub fn collect_audio_files(dir: &Path) -> Vec<PathBuf> {
 }
 
 pub fn read_file_meta(file_path: &Path) -> Song {
-    let path_str = file_path.to_string_lossy().to_string();
+    let path_str = file_path.to_string_lossy().replace('\\', "/");
     let id = format!("{:x}", md5::compute(&path_str));
 
     let file_stem = file_path

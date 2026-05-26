@@ -173,6 +173,7 @@ fn library_get_folders(app: tauri::AppHandle) -> Vec<WatchedFolder> {
 
 #[tauri::command]
 async fn library_add_folder(path: String, app: tauri::AppHandle) -> Result<Option<WatchedFolder>, String> {
+    let path = path.replace('\\', "/");
     let mut folders: Vec<WatchedFolder> = store_get(&app, "folders");
     if folders.iter().any(|f| f.path == path) {
         return Ok(None);
