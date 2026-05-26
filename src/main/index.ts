@@ -3,11 +3,23 @@ import { join, basename } from 'path'
 import fs from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import crypto from 'crypto'
+import DiscordRPC from 'discord-rpc'
 import store from './services/store'
 import { scanFolder, readFileMeta, getFolderSize } from './services/scanner'
 import type { WatchedFolder, Playlist } from './services/store'
 
 app.name = 'lokamusic'
+
+const DISCORD_CLIENT_ID = '1508866364251574342'
+
+DiscordRPC.register(DISCORD_CLIENT_ID)
+const rpc = new DiscordRPC.Client({ transport: 'ipc' })
+let rpcReady = false
+
+rpc.on('ready', () => { rpcReady = true })
+rpc.login({ clientId: DISCORD_CLIENT_ID }).catch(() => {})
+
+let discordPresenceEnabled = true
 
 let mainWindow: BrowserWindow | null = null
 
@@ -198,6 +210,70 @@ function registerIpcHandlers(): void {
     )
     store.set('playlists', playlists)
   })
+
+  ipcMain.handle('settings:get', () => store.get('settings'))
+
+  ipcMain.handle('settings:set-discord-presence', (_e, enabled: boolean) => {
+    discordPresenceEnabled = enabled
+    const settings = store.get('settings')
+    store.set('settings', { ...settings, discordPresence: enabled })
+    if (!enabled && rpcReady) rpc.clearActivity().catch(() => {})
+  })
+
+  interface DiscordPresencePayload {
+    title: string
+    artist: string
+    album: string
+    isPlaying: boolean
+    duration: number
+    currentTime: number
+  }
+
+  const artworkCache = new Map<string, string>()
+
+  async function fetchArtworkUrl(artist: string, album: string): Promise<string> {
+    const cacheKey = `${artist}::${album}`
+    if (artworkCache.has(cacheKey)) return artworkCache.get(cacheKey)!
+
+    try {
+      const query = encodeURIComponent(`${artist} ${album}`)
+      const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=album&limit=1`)
+      const json = await res.json() as { results: { artworkUrl100?: string }[] }
+      const url = json.results?.[0]?.artworkUrl100?.replace('100x100bb', '512x512bb') ?? 'lokamusic_logo'
+      artworkCache.set(cacheKey, url)
+      return url
+    } catch {
+      return 'lokamusic_logo'
+    }
+  }
+
+  ipcMain.handle('discord:update-presence', async (_e, payload: DiscordPresencePayload | null) => {
+    if (!rpcReady || !discordPresenceEnabled) return
+
+    if (!payload) {
+      rpc.clearActivity().catch(() => {})
+      return
+    }
+
+    const { title, artist, album, isPlaying, currentTime } = payload
+    const startTimestamp = isPlaying
+      ? new Date(Date.now() - currentTime * 1000)
+      : undefined
+
+    const artworkUrl = await fetchArtworkUrl(artist, album)
+
+    rpc.setActivity({
+      ...({ name: `lokamusic - ${artist}`, type: 2 } as object),
+      details: title,
+      state: `${artist} - ${album}`,
+      largeImageKey: artworkUrl,
+      largeImageText: album,
+      smallImageKey: isPlaying ? 'playing' : 'paused',
+      smallImageText: isPlaying ? 'Playing' : 'Paused',
+      startTimestamp,
+      instance: false,
+    }).catch(() => {})
+  })
 }
 
 let scanQueue = Promise.resolve()
@@ -261,6 +337,7 @@ function purgeOrphanSongs(): void {
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.lokamusic')
   purgeOrphanSongs()
+  discordPresenceEnabled = store.get('settings').discordPresence ?? true
 
   // Set Dock Icon on macOS
   let iconPath = join(__dirname, '../../public/logo.png')
@@ -281,6 +358,10 @@ app.whenReady().then(() => {
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+})
+
+app.on('before-quit', () => {
+  if (rpcReady) rpc.destroy().catch(() => {})
 })
 
 app.on('window-all-closed', () => {

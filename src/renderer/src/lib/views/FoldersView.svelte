@@ -28,13 +28,6 @@
     if (folder) library.addFolder(folder)
   }
 
-  async function importFiles() {
-    const paths = await window.electronAPI.invoke('dialog:select-files') as string[]
-    if (paths.length) {
-      await window.electronAPI.invoke('library:import-files', paths)
-    }
-  }
-
   async function rescanFolder(id: string) {
     await window.electronAPI.invoke('library:scan-folder', id)
   }
@@ -50,14 +43,8 @@
 
 <div class="folders-view">
   <div class="topbar">
-    <h1 class="page-title">File Manager</h1>
+    <h1 class="page-title">Folder - File Manager</h1>
     <div class="topbar-right">
-      <div class="search-wrap">
-        <Icon name="search" size={14} />
-        <input type="text" placeholder="Search folders…" />
-      </div>
-      <button class="icon-btn" title="Settings"><Icon name="settings" size={18} /></button>
-      <button class="icon-btn" title="Profile"><Icon name="user" size={18} /></button>
     </div>
   </div>
 
@@ -72,16 +59,6 @@
         <button class="scan-btn" onclick={scanNewFolder}>
           Scan New Folder <Icon name="arrow-right" size={16} />
         </button>
-        <div class="secondary-actions">
-          <button class="secondary-btn" onclick={importFiles}>
-            <Icon name="import" size={20} />
-            <span>Import Files</span>
-          </button>
-          <button class="secondary-btn disabled" disabled>
-            <Icon name="cloud" size={20} />
-            <span>Sync Cloud</span>
-          </button>
-        </div>
       </div>
     </div>
 
@@ -108,12 +85,12 @@
     <div class="folders-section">
       <div class="section-header">
         <h3>Watched Folders</h3>
-        <button class="link-btn">Manage All Permissions</button>
+        <!-- <button class="link-btn">Manage All Permissions</button> -->
       </div>
 
       <div class="folders-grid">
         {#each library.folders as folder}
-          <div class="folder-card">
+          <div class="folder-card" onclick={() => ui.navigateToFolder(folder.id)} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && ui.navigateToFolder(folder.id)}>
             <div class="folder-art-wrap">
               <FolderArt folderId={folder.id} size={130} />
               <span class="folder-badge">LOCAL DRIVE</span>
@@ -123,10 +100,10 @@
               <p class="folder-meta">{formatBytes(folder.sizeBytes)} · {folder.songCount} Tracks</p>
             </div>
             <div class="folder-actions">
-              <button class="icon-action" onclick={() => rescanFolder(folder.id)} title="Rescan">
+              <button class="icon-action" onclick={(e) => { e.stopPropagation(); rescanFolder(folder.id) }} title="Rescan">
                 <Icon name="refresh" size={14} />
               </button>
-              <button class="icon-action danger" onclick={() => folderToRemove = folder} title="Remove">
+              <button class="icon-action danger" onclick={(e) => { e.stopPropagation(); folderToRemove = folder }} title="Remove">
                 <Icon name="trash" size={14} />
               </button>
             </div>
@@ -216,39 +193,7 @@
     gap: 8px;
   }
 
-  .search-wrap {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--surface-container);
-    border: 1px solid var(--outline-variant);
-    border-radius: var(--radius-xl);
-    padding: 7px 14px;
-    color: var(--on-surface-variant);
-  }
-
-  .search-wrap input {
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--on-surface);
-    font-size: 13px;
-    width: 180px;
-  }
-
-  .search-wrap input::placeholder { color: var(--outline); }
-
-  .icon-btn {
-    color: var(--on-surface-variant);
-    padding: 8px;
-    border-radius: var(--radius-lg);
-    display: flex;
-    transition: color 0.12s, background 0.12s;
-  }
-
-  .icon-btn:hover { color: var(--on-surface); background: var(--surface-container); }
-
-  .content {
+.content {
     flex: 1;
     overflow-y: auto;
     padding: 16px 32px 32px;
@@ -308,28 +253,6 @@
 
   .scan-btn:hover { background: var(--tertiary); }
 
-  .secondary-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .secondary-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    padding: 14px 12px;
-    background: var(--surface-container);
-    border: 1px solid var(--outline-variant);
-    border-radius: var(--radius-lg);
-    font-size: 12px;
-    color: var(--on-surface-variant);
-    transition: border-color 0.12s, color 0.12s;
-  }
-
-  .secondary-btn:hover:not(.disabled) { border-color: var(--outline); color: var(--on-surface); }
-  .secondary-btn.disabled { opacity: 0.4; cursor: not-allowed; }
 
   /* Scan card */
   .scan-card {
@@ -419,6 +342,7 @@
     overflow: hidden;
     transition: border-color 0.12s;
     text-align: left;
+    cursor: pointer;
   }
 
   .folder-card:hover { border-color: var(--outline); }

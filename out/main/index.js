@@ -3,6 +3,7 @@ const electron = require("electron");
 const path = require("path");
 const fs = require("fs");
 const crypto = require("crypto");
+const DiscordRPC = require("discord-rpc");
 const Store = require("electron-store");
 const mm = require("music-metadata");
 function _interopNamespaceDefault(e) {
@@ -121,7 +122,7 @@ const store = new Store({
     folders: [],
     scanHistory: [],
     playlists: [],
-    settings: { volume: 0.8, shuffle: false, repeat: "none" }
+    settings: { volume: 0.8, shuffle: false, repeat: "none", discordPresence: true }
   }
 });
 const AUDIO_EXTENSIONS = /* @__PURE__ */ new Set([".mp3", ".flac", ".wav", ".ogg", ".m4a", ".aac", ".wma", ".opus"]);
@@ -240,6 +241,16 @@ function getFolderSize(dirPath) {
   return size;
 }
 electron.app.name = "lokamusic";
+const DISCORD_CLIENT_ID = "1508866364251574342";
+DiscordRPC.register(DISCORD_CLIENT_ID);
+const rpc = new DiscordRPC.Client({ transport: "ipc" });
+let rpcReady = false;
+rpc.on("ready", () => {
+  rpcReady = true;
+});
+rpc.login({ clientId: DISCORD_CLIENT_ID }).catch(() => {
+});
+let discordPresenceEnabled = true;
 let mainWindow = null;
 function createWindow() {
   let iconPath = path.join(__dirname, "../../public/logo.png");
@@ -396,6 +407,52 @@ function registerIpcHandlers() {
     );
     store.set("playlists", playlists);
   });
+  electron.ipcMain.handle("settings:get", () => store.get("settings"));
+  electron.ipcMain.handle("settings:set-discord-presence", (_e, enabled) => {
+    discordPresenceEnabled = enabled;
+    const settings = store.get("settings");
+    store.set("settings", { ...settings, discordPresence: enabled });
+    if (!enabled && rpcReady) rpc.clearActivity().catch(() => {
+    });
+  });
+  const artworkCache = /* @__PURE__ */ new Map();
+  async function fetchArtworkUrl(artist, album) {
+    const cacheKey = `${artist}::${album}`;
+    if (artworkCache.has(cacheKey)) return artworkCache.get(cacheKey);
+    try {
+      const query = encodeURIComponent(`${artist} ${album}`);
+      const res = await fetch(`https://itunes.apple.com/search?term=${query}&entity=album&limit=1`);
+      const json = await res.json();
+      const url = json.results?.[0]?.artworkUrl100?.replace("100x100bb", "512x512bb") ?? "lokamusic_logo";
+      artworkCache.set(cacheKey, url);
+      return url;
+    } catch {
+      return "lokamusic_logo";
+    }
+  }
+  electron.ipcMain.handle("discord:update-presence", async (_e, payload) => {
+    if (!rpcReady || !discordPresenceEnabled) return;
+    if (!payload) {
+      rpc.clearActivity().catch(() => {
+      });
+      return;
+    }
+    const { title, artist, album, isPlaying, currentTime } = payload;
+    const startTimestamp = isPlaying ? new Date(Date.now() - currentTime * 1e3) : void 0;
+    const artworkUrl = await fetchArtworkUrl(artist, album);
+    rpc.setActivity({
+      ...{ name: `lokamusic - ${artist}`, type: 2 },
+      details: title,
+      state: `${artist} - ${album}`,
+      largeImageKey: artworkUrl,
+      largeImageText: album,
+      smallImageKey: isPlaying ? "playing" : "paused",
+      smallImageText: isPlaying ? "Playing" : "Paused",
+      startTimestamp,
+      instance: false
+    }).catch(() => {
+    });
+  });
 }
 let scanQueue = Promise.resolve();
 async function doScan(folderId, folderPath) {
@@ -446,6 +503,7 @@ function purgeOrphanSongs() {
 electron.app.whenReady().then(() => {
   electronApp.setAppUserModelId("com.lokamusic");
   purgeOrphanSongs();
+  discordPresenceEnabled = store.get("settings").discordPresence ?? true;
   let iconPath = path.join(__dirname, "../../public/logo.png");
   if (!fs.existsSync(iconPath)) {
     iconPath = path.join(__dirname, "../renderer/logo.png");
@@ -460,6 +518,10 @@ electron.app.whenReady().then(() => {
   createWindow();
   electron.app.on("activate", function() {
     if (electron.BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
+electron.app.on("before-quit", () => {
+  if (rpcReady) rpc.destroy().catch(() => {
   });
 });
 electron.app.on("window-all-closed", () => {

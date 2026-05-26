@@ -1,4 +1,4 @@
-export type View = 'library' | 'folders' | 'player' | 'liked' | 'albums' | 'artists' | 'playlist'
+export type View = 'library' | 'folders' | 'folder-tree' | 'player' | 'liked' | 'albums' | 'artists' | 'playlist' | 'settings'
 
 export interface ScanProgress {
   folderId: string
@@ -13,7 +13,12 @@ let searchQuery = $state('')
 let selectedFolderId = $state<string | null>(null)
 let selectedPlaylistId = $state<string | null>(null)
 let pendingArtistName = $state<string | null>(null)
+let pendingAlbumKey = $state<string | null>(null)
 let showQueue = $state(false)
+let selectedSubFolderPath = $state<string | null>(null)
+let pinnedFolders = $state<{ path: string; name: string }[]>(
+  JSON.parse(localStorage.getItem('lokamusic:pinnedFolders') ?? '[]')
+)
 
 export const ui = {
   get currentView() { return currentView },
@@ -22,17 +27,46 @@ export const ui = {
   get selectedFolderId() { return selectedFolderId },
   get selectedPlaylistId() { return selectedPlaylistId },
   get pendingArtistName() { return pendingArtistName },
+  get pendingAlbumKey() { return pendingAlbumKey },
   get showQueue() { return showQueue },
+  get selectedSubFolderPath() { return selectedSubFolderPath },
+  get pinnedFolders() { return pinnedFolders },
 
   navigate(view: View) {
     currentView = view
     selectedFolderId = null
     selectedPlaylistId = null
+    selectedSubFolderPath = null
     searchQuery = ''
   },
   navigateToFolder(folderId: string) {
     currentView = 'library'
     selectedFolderId = folderId
+    selectedPlaylistId = null
+    selectedSubFolderPath = null
+    searchQuery = ''
+  },
+  navigateToSubFolder(path: string) {
+    currentView = 'library'
+    selectedSubFolderPath = path
+    selectedFolderId = null
+    selectedPlaylistId = null
+    searchQuery = ''
+  },
+  pinFolder(path: string, name: string) {
+    if (!pinnedFolders.find(f => f.path === path)) {
+      pinnedFolders = [...pinnedFolders, { path, name }]
+      localStorage.setItem('lokamusic:pinnedFolders', JSON.stringify(pinnedFolders))
+    }
+  },
+  unpinFolder(path: string) {
+    pinnedFolders = pinnedFolders.filter(f => f.path !== path)
+    localStorage.setItem('lokamusic:pinnedFolders', JSON.stringify(pinnedFolders))
+  },
+  navigateToAlbum(albumName: string, artist: string) {
+    pendingAlbumKey = `${albumName}__${artist}`
+    currentView = 'albums'
+    selectedFolderId = null
     selectedPlaylistId = null
     searchQuery = ''
   },
@@ -50,8 +84,9 @@ export const ui = {
     searchQuery = ''
   },
   clearPendingArtist() { pendingArtistName = null },
+  clearPendingAlbum() { pendingAlbumKey = null },
   toggleQueue() { showQueue = !showQueue },
-  clearFolderFilter() { selectedFolderId = null },
+  clearFolderFilter() { selectedFolderId = null; selectedSubFolderPath = null },
   setScanProgress(p: ScanProgress | null) { scanProgress = p },
   setSearchQuery(q: string) { searchQuery = q }
 }

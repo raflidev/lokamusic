@@ -2,6 +2,7 @@
   import Icon from '../components/Icon.svelte'
   import { library } from '../stores/library.svelte'
   import { player } from '../stores/player.svelte'
+  import { ui } from '../stores/ui.svelte'
   import type { Song } from '../../../../../preload/index.d'
 
   interface Album {
@@ -26,6 +27,14 @@
 
   let selectedAlbum = $state<Album | null>(null)
   let hoveredRowId = $state<string | null>(null)
+
+  $effect(() => {
+    const key = ui.pendingAlbumKey
+    if (key) {
+      selectedAlbum = albums.find(a => `${a.name}__${a.artist}` === key) ?? null
+      ui.clearPendingAlbum()
+    }
+  })
 
   function formatDuration(s: number): string {
     if (!s) return '--'

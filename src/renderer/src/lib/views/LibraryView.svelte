@@ -60,9 +60,11 @@
   )
 
   const baseSongs = $derived(
-    activeFolder
-      ? library.songs.filter(s => s.path.startsWith(activeFolder.path))
-      : library.songs
+    ui.selectedSubFolderPath
+      ? library.songs.filter(s => s.path.startsWith(ui.selectedSubFolderPath! + '/'))
+      : activeFolder
+        ? library.songs.filter(s => s.path.startsWith(activeFolder.path))
+        : library.songs
   )
 
   const filteredSongs = $derived(
@@ -208,12 +210,11 @@
       />
     </div>
     <div class="topbar-actions">
-      <button class="icon-btn" title="Settings"><Icon name="settings" size={18} /></button>
     </div>
   </div>
 
   <div class="content">
-    {#if library.recentlyPlayed.length > 0 && !searchQuery && !activeFolder}
+    {#if library.recentlyPlayed.length > 0 && !searchQuery && !activeFolder && !ui.selectedSubFolderPath}
       <section class="recently-played">
         <h2 class="section-title">Recently Played</h2>
         <div class="recent-strip">
@@ -241,13 +242,17 @@
     <section class="all-songs">
       <div class="all-songs-header">
         <div class="title-wrap">
-          {#if activeFolder}
+          {#if activeFolder || ui.selectedSubFolderPath}
             <button class="back-btn" onclick={() => ui.clearFolderFilter()} title="Back to all songs">
               <Icon name="arrow-right" size={14} class="back-arrow" />
             </button>
           {/if}
-          <h2 class="section-title">{activeFolder ? activeFolder.name : 'All Songs'}</h2>
-          {#if activeFolder}
+          <h2 class="section-title">
+            {ui.selectedSubFolderPath
+              ? (ui.selectedSubFolderPath.split('/').pop() ?? 'Folder')
+              : activeFolder ? activeFolder.name : 'All Songs'}
+          </h2>
+          {#if activeFolder || ui.selectedSubFolderPath}
             <span class="folder-count">{displaySongs.length} songs</span>
           {/if}
         </div>
@@ -365,7 +370,11 @@
                     </div>
                   </div>
                 </td>
-                <td class="col-album text-muted">{song.album}</td>
+                <td class="col-album">
+                  <button class="album-link" onclick={(e) => { e.stopPropagation(); ui.navigateToAlbum(song.album, song.artist) }}>
+                    {song.album}
+                  </button>
+                </td>
                 <td class="col-date text-muted">{formatDate(song.dateAdded)}</td>
                 <td class="col-duration text-muted">{formatDuration(song.duration)}</td>
                 <td class="col-actions">
@@ -875,6 +884,28 @@
   }
 
   .text-muted { color: var(--on-surface-variant); }
+
+  .album-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 13px;
+    color: var(--on-surface-variant);
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.1s;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .album-link:hover {
+    color: var(--on-surface);
+    text-decoration: underline;
+  }
 
   /* Row action button (add to playlist) */
   .row-action-btn {
