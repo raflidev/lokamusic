@@ -4,6 +4,7 @@
   import BottomBar from './lib/components/BottomBar.svelte'
   import LibraryView from './lib/views/LibraryView.svelte'
   import FoldersView from './lib/views/FoldersView.svelte'
+  import FolderTreeView from './lib/views/FolderTreeView.svelte'
   import PlayerView from './lib/views/PlayerView.svelte'
   import LikedSongsView from './lib/views/LikedSongsView.svelte'
   import AlbumsView from './lib/views/AlbumsView.svelte'
@@ -58,6 +59,8 @@
     <main class="view-area">
       {#if ui.currentView === 'library'}
         <LibraryView />
+      {:else if ui.currentView === 'folder-tree'}
+        <FolderTreeView />
       {:else if ui.currentView === 'folders'}
         <FoldersView />
       {:else if ui.currentView === 'player'}

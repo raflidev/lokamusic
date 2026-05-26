@@ -4335,7 +4335,7 @@ if (typeof window !== "undefined") {
   ((window.__svelte ??= {}).v ??= /* @__PURE__ */ new Set()).add(PUBLIC_VERSION);
 }
 enable_legacy_mode_flag();
-var root$a = /* @__PURE__ */ from_svg(`<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path></path></svg>`);
+var root$b = /* @__PURE__ */ from_svg(`<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path></path></svg>`);
 function Icon($$anchor, $$props) {
   const size = prop($$props, "size", 3, 16), cls = prop($$props, "class", 3, "");
   const icons = {
@@ -4374,12 +4374,17 @@ function Icon($$anchor, $$props) {
     "more-horizontal": "M12 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-7 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm14 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z",
     "list-music": "M3 6h18M3 10h18M3 14h12M3 18h9",
     github: "M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22",
-    info: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 8h.01M12 12v4"
+    info: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM12 8h.01M12 12v4",
+    hierarchy: "M12 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM6 15a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM18 15a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM12 7v4M10 11l-4 4M14 11l4 4",
+    "chevron-right": "M9 18l6-6-6-6",
+    "chevron-down": "M6 9l6 6 6-6",
+    pin: "M12 22V15M5 8l2-7h10l2 7a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5z",
+    x: "M18 6L6 18M6 6l12 12"
   };
   const d = /* @__PURE__ */ user_derived(() => icons[$$props.name] ?? icons["music"]);
   const filled = ["heart-filled", "play", "more-horizontal"];
   const isLine = /* @__PURE__ */ user_derived(() => !filled.includes($$props.name));
-  var svg = root$a();
+  var svg = root$b();
   var path = child(svg);
   template_effect(() => {
     set_attribute(svg, "width", size());
@@ -4448,13 +4453,13 @@ const library = {
     );
   }
 };
-var root_1$a = /* @__PURE__ */ from_html(`<div class="fallback svelte-1ap7hhk"><!></div>`);
-var root_2$9 = /* @__PURE__ */ from_html(`<img alt="" class="single svelte-1ap7hhk"/>`);
-var root_5$9 = /* @__PURE__ */ from_html(`<img alt="" class="svelte-1ap7hhk"/>`);
-var root_6$6 = /* @__PURE__ */ from_html(`<img alt="" class="svelte-1ap7hhk"/>`);
+var root_1$b = /* @__PURE__ */ from_html(`<div class="fallback svelte-1ap7hhk"><!></div>`);
+var root_2$a = /* @__PURE__ */ from_html(`<img alt="" class="single svelte-1ap7hhk"/>`);
+var root_5$a = /* @__PURE__ */ from_html(`<img alt="" class="svelte-1ap7hhk"/>`);
+var root_6$7 = /* @__PURE__ */ from_html(`<img alt="" class="svelte-1ap7hhk"/>`);
 var root_4$9 = /* @__PURE__ */ from_html(`<div class="cell svelte-1ap7hhk"><!></div>`);
-var root_3$a = /* @__PURE__ */ from_html(`<div class="grid svelte-1ap7hhk"></div>`);
-var root$9 = /* @__PURE__ */ from_html(`<div class="folder-art svelte-1ap7hhk"><!></div>`);
+var root_3$b = /* @__PURE__ */ from_html(`<div class="grid svelte-1ap7hhk"></div>`);
+var root$a = /* @__PURE__ */ from_html(`<div class="folder-art svelte-1ap7hhk"><!></div>`);
 function FolderArt($$anchor, $$props) {
   push($$props, true);
   const size = prop($$props, "size", 3, 28);
@@ -4473,11 +4478,11 @@ function FolderArt($$anchor, $$props) {
     }
     return result;
   });
-  var div = root$9();
+  var div = root$a();
   var node = child(div);
   {
     var consequent = ($$anchor2) => {
-      var div_1 = root_1$a();
+      var div_1 = root_1$b();
       var node_1 = child(div_1);
       {
         let $0 = /* @__PURE__ */ user_derived(() => size() * 0.55);
@@ -4491,23 +4496,23 @@ function FolderArt($$anchor, $$props) {
       append($$anchor2, div_1);
     };
     var consequent_1 = ($$anchor2) => {
-      var img = root_2$9();
+      var img = root_2$a();
       template_effect(() => set_attribute(img, "src", get(arts)[0]));
       append($$anchor2, img);
     };
     var alternate = ($$anchor2) => {
-      var div_2 = root_3$a();
+      var div_2 = root_3$b();
       each(div_2, 20, () => Array(4), index, ($$anchor3, _, i) => {
         var div_3 = root_4$9();
         var node_2 = child(div_3);
         {
           var consequent_2 = ($$anchor4) => {
-            var img_1 = root_5$9();
+            var img_1 = root_5$a();
             template_effect(() => set_attribute(img_1, "src", get(arts)[i]));
             append($$anchor4, img_1);
           };
           var consequent_3 = ($$anchor4) => {
-            var img_2 = root_6$6();
+            var img_2 = root_6$7();
             template_effect(() => set_attribute(img_2, "src", get(arts)[get(arts).length - 1]));
             append($$anchor4, img_2);
           };
@@ -4537,6 +4542,8 @@ let selectedFolderId = /* @__PURE__ */ state(null);
 let selectedPlaylistId = /* @__PURE__ */ state(null);
 let pendingArtistName = /* @__PURE__ */ state(null);
 let showQueue = /* @__PURE__ */ state(false);
+let selectedSubFolderPath = /* @__PURE__ */ state(null);
+let pinnedFolders = /* @__PURE__ */ state(proxy(JSON.parse(localStorage.getItem("lokamusic:pinnedFolders") ?? "[]")));
 const ui = {
   get currentView() {
     return get(currentView);
@@ -4559,17 +4566,42 @@ const ui = {
   get showQueue() {
     return get(showQueue);
   },
+  get selectedSubFolderPath() {
+    return get(selectedSubFolderPath);
+  },
+  get pinnedFolders() {
+    return get(pinnedFolders);
+  },
   navigate(view) {
     set(currentView, view, true);
     set(selectedFolderId, null);
     set(selectedPlaylistId, null);
+    set(selectedSubFolderPath, null);
     set(searchQuery, "");
   },
   navigateToFolder(folderId) {
     set(currentView, "library");
     set(selectedFolderId, folderId, true);
     set(selectedPlaylistId, null);
+    set(selectedSubFolderPath, null);
     set(searchQuery, "");
+  },
+  navigateToSubFolder(path) {
+    set(currentView, "library");
+    set(selectedSubFolderPath, path, true);
+    set(selectedFolderId, null);
+    set(selectedPlaylistId, null);
+    set(searchQuery, "");
+  },
+  pinFolder(path, name) {
+    if (!get(pinnedFolders).find((f) => f.path === path)) {
+      set(pinnedFolders, [...get(pinnedFolders), { path, name }], true);
+      localStorage.setItem("lokamusic:pinnedFolders", JSON.stringify(get(pinnedFolders)));
+    }
+  },
+  unpinFolder(path) {
+    set(pinnedFolders, get(pinnedFolders).filter((f) => f.path !== path), true);
+    localStorage.setItem("lokamusic:pinnedFolders", JSON.stringify(get(pinnedFolders)));
   },
   navigateToArtist(name) {
     set(pendingArtistName, name, true);
@@ -4592,6 +4624,7 @@ const ui = {
   },
   clearFolderFilter() {
     set(selectedFolderId, null);
+    set(selectedSubFolderPath, null);
   },
   setScanProgress(p) {
     set(scanProgress, p, true);
@@ -4628,17 +4661,20 @@ const playlistStore = {
     );
   }
 };
-var root_1$9 = /* @__PURE__ */ from_html(`<button><!> <span> </span></button>`);
-var root_3$9 = /* @__PURE__ */ from_html(`<button><!> <div class="folder-item-meta svelte-1p8bvkj"><span class="folder-item-name svelte-1p8bvkj"> </span> <span class="folder-item-count svelte-1p8bvkj"> </span></div></button>`);
-var root_2$8 = /* @__PURE__ */ from_html(`<div class="folder-divider svelte-1p8bvkj"></div> <!>`, 1);
-var root_4$8 = /* @__PURE__ */ from_html(`<div class="new-playlist-input svelte-1p8bvkj"><input type="text" placeholder="Playlist name…" class="svelte-1p8bvkj"/></div>`);
-var root_5$8 = /* @__PURE__ */ from_html(`<p class="empty-playlists svelte-1p8bvkj">No playlists yet</p>`);
-var root_7$6 = /* @__PURE__ */ from_html(`<button><!> <span class="playlist-name-label svelte-1p8bvkj"> </span></button>`);
-var root$8 = /* @__PURE__ */ from_html(`<aside class="sidebar svelte-1p8bvkj"><div class="logo svelte-1p8bvkj"><span>lokamusic</span></div> <nav class="nav svelte-1p8bvkj"></nav> <div class="section library-section svelte-1p8bvkj"><p class="label-sm svelte-1p8bvkj">Your Library</p> <button><!> <span>Liked Songs</span></button> <button><!> <span>Albums</span></button> <button><!> <span>Artists</span></button> <!></div> <div class="section playlists svelte-1p8bvkj"><div class="section-header svelte-1p8bvkj"><p class="label-sm svelte-1p8bvkj">Playlists</p> <button class="icon-btn svelte-1p8bvkj" title="New playlist"><!></button></div> <!> <!></div> <div class="star-section svelte-1p8bvkj"><button class="star-btn svelte-1p8bvkj"><!> <span>Star Repository</span></button></div></aside>`);
+var root_1$a = /* @__PURE__ */ from_html(`<button><!> <span> </span></button>`);
+var root_2$9 = /* @__PURE__ */ from_html(`<div class="new-playlist-input svelte-1p8bvkj"><input type="text" placeholder="Playlist name…" class="svelte-1p8bvkj"/></div>`);
+var root_3$a = /* @__PURE__ */ from_html(`<p class="empty-playlists svelte-1p8bvkj">No playlists yet</p>`);
+var root_5$9 = /* @__PURE__ */ from_html(`<button><!> <span class="playlist-name-label svelte-1p8bvkj"> </span></button>`);
+var root$9 = /* @__PURE__ */ from_html(`<aside class="sidebar svelte-1p8bvkj"><div class="logo svelte-1p8bvkj"><span>lokamusic</span></div> <nav class="nav svelte-1p8bvkj"></nav> <div class="section library-section svelte-1p8bvkj"><p class="label-sm svelte-1p8bvkj">Your Library</p> <button><!> <span>Liked Songs</span></button> <button><!> <span>Albums</span></button> <button><!> <span>Artists</span></button></div> <div class="section playlists svelte-1p8bvkj"><div class="section-header svelte-1p8bvkj"><p class="label-sm svelte-1p8bvkj">Playlists</p> <button class="icon-btn svelte-1p8bvkj" title="New playlist"><!></button></div> <!> <!></div> <div class="star-section svelte-1p8bvkj"><button class="star-btn svelte-1p8bvkj"><!> <span>Star Repository</span></button></div></aside>`);
 function Sidebar($$anchor, $$props) {
   push($$props, true);
   const navItems = [
     { view: "library", icon: "library", label: "Library" },
+    {
+      view: "folder-tree",
+      icon: "hierarchy",
+      label: "Folders Hierarchy"
+    },
     { view: "folders", icon: "folder", label: "Folders" },
     { view: "player", icon: "headphones", label: "Player" }
   ];
@@ -4660,10 +4696,10 @@ function Sidebar($$anchor, $$props) {
     set(creatingPlaylist, false);
     set(newPlaylistName, "");
   }
-  var aside = root$8();
+  var aside = root$9();
   var nav = sibling(child(aside), 2);
   each(nav, 21, () => navItems, index, ($$anchor2, item) => {
-    var button = root_1$9();
+    var button = root_1$a();
     let classes;
     var node = child(button);
     Icon(node, {
@@ -4696,51 +4732,16 @@ function Sidebar($$anchor, $$props) {
   let classes_3;
   var node_3 = child(button_3);
   Icon(node_3, { name: "user", size: 15 });
-  var node_4 = sibling(button_3, 2);
+  var div_1 = sibling(div, 2);
+  var div_2 = child(div_1);
+  var button_4 = sibling(child(div_2), 2);
+  var node_4 = child(button_4);
+  Icon(node_4, { name: "plus", size: 14 });
+  var node_5 = sibling(div_2, 2);
   {
     var consequent = ($$anchor2) => {
-      var fragment = root_2$8();
-      var node_5 = sibling(first_child(fragment), 2);
-      each(node_5, 17, () => library.folders, index, ($$anchor3, folder) => {
-        var button_4 = root_3$9();
-        let classes_4;
-        var node_6 = child(button_4);
-        FolderArt(node_6, {
-          get folderId() {
-            return get(folder).id;
-          },
-          size: 28
-        });
-        var div_1 = sibling(node_6, 2);
-        var span_1 = child(div_1);
-        var text_1 = child(span_1);
-        var span_2 = sibling(span_1, 2);
-        var text_2 = child(span_2);
-        template_effect(() => {
-          classes_4 = set_class(button_4, 1, "nav-item folder-item svelte-1p8bvkj", null, classes_4, { active: ui.selectedFolderId === get(folder).id });
-          set_attribute(button_4, "title", get(folder).path);
-          set_text(text_1, get(folder).name);
-          set_text(text_2, `${get(folder).songCount ?? ""} tracks`);
-        });
-        delegated("click", button_4, () => ui.navigateToFolder(get(folder).id));
-        append($$anchor3, button_4);
-      });
-      append($$anchor2, fragment);
-    };
-    if_block(node_4, ($$render) => {
-      if (library.folders.length > 0) $$render(consequent);
-    });
-  }
-  var div_2 = sibling(div, 2);
-  var div_3 = child(div_2);
-  var button_5 = sibling(child(div_3), 2);
-  var node_7 = child(button_5);
-  Icon(node_7, { name: "plus", size: 14 });
-  var node_8 = sibling(div_3, 2);
-  {
-    var consequent_1 = ($$anchor2) => {
-      var div_4 = root_4$8();
-      var input = child(div_4);
+      var div_3 = root_2$9();
+      var input = child(div_3);
       autofocus(input);
       delegated("keydown", input, (e) => {
         if (e.key === "Enter") confirmCreatePlaylist();
@@ -4748,49 +4749,49 @@ function Sidebar($$anchor, $$props) {
       });
       event("blur", input, confirmCreatePlaylist);
       bind_value(input, () => get(newPlaylistName), ($$value) => set(newPlaylistName, $$value));
-      append($$anchor2, div_4);
+      append($$anchor2, div_3);
     };
-    if_block(node_8, ($$render) => {
-      if (get(creatingPlaylist)) $$render(consequent_1);
+    if_block(node_5, ($$render) => {
+      if (get(creatingPlaylist)) $$render(consequent);
     });
   }
-  var node_9 = sibling(node_8, 2);
+  var node_6 = sibling(node_5, 2);
   {
-    var consequent_2 = ($$anchor2) => {
-      var p = root_5$8();
+    var consequent_1 = ($$anchor2) => {
+      var p = root_3$a();
       append($$anchor2, p);
     };
     var alternate = ($$anchor2) => {
-      var fragment_1 = comment();
-      var node_10 = first_child(fragment_1);
-      each(node_10, 17, () => playlistStore.all, index, ($$anchor3, pl) => {
-        var button_6 = root_7$6();
-        let classes_5;
-        var node_11 = child(button_6);
-        Icon(node_11, { name: "queue", size: 15 });
-        var span_3 = sibling(node_11, 2);
-        var text_3 = child(span_3);
+      var fragment = comment();
+      var node_7 = first_child(fragment);
+      each(node_7, 17, () => playlistStore.all, index, ($$anchor3, pl) => {
+        var button_5 = root_5$9();
+        let classes_4;
+        var node_8 = child(button_5);
+        Icon(node_8, { name: "queue", size: 15 });
+        var span_1 = sibling(node_8, 2);
+        var text_1 = child(span_1);
         template_effect(() => {
-          classes_5 = set_class(button_6, 1, "nav-item svelte-1p8bvkj", null, classes_5, {
+          classes_4 = set_class(button_5, 1, "nav-item svelte-1p8bvkj", null, classes_4, {
             active: ui.currentView === "playlist" && ui.selectedPlaylistId === get(pl).id
           });
-          set_attribute(button_6, "title", get(pl).name);
-          set_text(text_3, get(pl).name);
+          set_attribute(button_5, "title", get(pl).name);
+          set_text(text_1, get(pl).name);
         });
-        delegated("click", button_6, () => ui.navigateToPlaylist(get(pl).id));
-        append($$anchor3, button_6);
+        delegated("click", button_5, () => ui.navigateToPlaylist(get(pl).id));
+        append($$anchor3, button_5);
       });
-      append($$anchor2, fragment_1);
+      append($$anchor2, fragment);
     };
-    if_block(node_9, ($$render) => {
-      if (playlistStore.all.length === 0 && !get(creatingPlaylist)) $$render(consequent_2);
+    if_block(node_6, ($$render) => {
+      if (playlistStore.all.length === 0 && !get(creatingPlaylist)) $$render(consequent_1);
       else $$render(alternate, -1);
     });
   }
-  var div_5 = sibling(div_2, 2);
-  var button_7 = child(div_5);
-  var node_12 = child(button_7);
-  Icon(node_12, { name: "github", size: 14 });
+  var div_4 = sibling(div_1, 2);
+  var button_6 = child(div_4);
+  var node_9 = child(button_6);
+  Icon(node_9, { name: "github", size: 14 });
   template_effect(() => {
     classes_1 = set_class(button_1, 1, "nav-item svelte-1p8bvkj", null, classes_1, { active: ui.currentView === "liked" });
     classes_2 = set_class(button_2, 1, "nav-item svelte-1p8bvkj", null, classes_2, { active: ui.currentView === "albums" });
@@ -4799,11 +4800,11 @@ function Sidebar($$anchor, $$props) {
   delegated("click", button_1, () => ui.navigate("liked"));
   delegated("click", button_2, () => ui.navigate("albums"));
   delegated("click", button_3, () => ui.navigate("artists"));
-  delegated("click", button_5, () => {
+  delegated("click", button_4, () => {
     set(creatingPlaylist, true);
     set(newPlaylistName, "");
   });
-  delegated("click", button_7, () => window.open("https://github.com/raflidev/lokamusic", "_blank"));
+  delegated("click", button_6, () => window.open("https://github.com/raflidev/lokamusic", "_blank"));
   append($$anchor, aside);
   pop();
 }
@@ -4955,11 +4956,11 @@ const player = {
     return next < get(queue).length ? get(queue)[next] : null;
   }
 };
-var root_1$8 = /* @__PURE__ */ from_html(`<img alt="" class="svelte-1t31m9f"/>`);
-var root_2$7 = /* @__PURE__ */ from_html(`<div class="art-placeholder svelte-1t31m9f"><!></div>`);
-var root_3$8 = /* @__PURE__ */ from_html(`<div class="meta svelte-1t31m9f"><span class="track-title svelte-1t31m9f"> </span> <button class="track-artist-btn svelte-1t31m9f"> </button></div> <button title="Like"><!></button>`, 1);
-var root_4$7 = /* @__PURE__ */ from_html(`<div class="meta svelte-1t31m9f"><span class="track-title muted svelte-1t31m9f">Not playing</span></div>`);
-var root$7 = /* @__PURE__ */ from_html(`<div class="bottom-bar svelte-1t31m9f"><div class="inner svelte-1t31m9f"><div class="track-info svelte-1t31m9f"><button class="album-art svelte-1t31m9f"><!></button> <!></div> <div class="controls svelte-1t31m9f"><div class="buttons svelte-1t31m9f"><button title="Shuffle"><!></button> <button class="ctrl-btn svelte-1t31m9f" title="Previous"><!></button> <button class="play-btn svelte-1t31m9f"><!></button> <button class="ctrl-btn svelte-1t31m9f" title="Next"><!></button> <button title="Repeat"><!></button></div> <div class="progress-row svelte-1t31m9f"><span class="time svelte-1t31m9f"> </span> <input type="range" class="range-bar svelte-1t31m9f" min="0" step="0.1"/> <span class="time svelte-1t31m9f"> </span></div></div> <div class="extras svelte-1t31m9f"><!> <input type="range" class="range-bar volume-range svelte-1t31m9f" min="0" max="1" step="0.01"/> <button title="Queue"><!></button></div></div></div>`);
+var root_1$9 = /* @__PURE__ */ from_html(`<img alt="" class="svelte-1t31m9f"/>`);
+var root_2$8 = /* @__PURE__ */ from_html(`<div class="art-placeholder svelte-1t31m9f"><!></div>`);
+var root_3$9 = /* @__PURE__ */ from_html(`<div class="meta svelte-1t31m9f"><span class="track-title svelte-1t31m9f"> </span> <button class="track-artist-btn svelte-1t31m9f"> </button></div> <button title="Like"><!></button>`, 1);
+var root_4$8 = /* @__PURE__ */ from_html(`<div class="meta svelte-1t31m9f"><span class="track-title muted svelte-1t31m9f">Not playing</span></div>`);
+var root$8 = /* @__PURE__ */ from_html(`<div class="bottom-bar svelte-1t31m9f"><div class="inner svelte-1t31m9f"><div class="track-info svelte-1t31m9f"><button class="album-art svelte-1t31m9f"><!></button> <!></div> <div class="controls svelte-1t31m9f"><div class="buttons svelte-1t31m9f"><button title="Shuffle"><!></button> <button class="ctrl-btn svelte-1t31m9f" title="Previous"><!></button> <button class="play-btn svelte-1t31m9f"><!></button> <button class="ctrl-btn svelte-1t31m9f" title="Next"><!></button> <button title="Repeat"><!></button></div> <div class="progress-row svelte-1t31m9f"><span class="time svelte-1t31m9f"> </span> <input type="range" class="range-bar svelte-1t31m9f" min="0" step="0.1"/> <span class="time svelte-1t31m9f"> </span></div></div> <div class="extras svelte-1t31m9f"><!> <input type="range" class="range-bar volume-range svelte-1t31m9f" min="0" max="1" step="0.01"/> <button title="Queue"><!></button></div></div></div>`);
 function BottomBar($$anchor, $$props) {
   push($$props, true);
   function formatTime(s) {
@@ -4980,19 +4981,19 @@ function BottomBar($$anchor, $$props) {
   });
   const displayPct = /* @__PURE__ */ user_derived(() => player.duration > 0 ? get(seekValue) / player.duration * 100 : 0);
   const songLiked = /* @__PURE__ */ user_derived(() => player.currentSong ? library.songs.find((s) => s.id === player.currentSong.id)?.liked ?? false : false);
-  var div = root$7();
+  var div = root$8();
   var div_1 = child(div);
   var div_2 = child(div_1);
   var button = child(div_2);
   var node = child(button);
   {
     var consequent = ($$anchor2) => {
-      var img = root_1$8();
+      var img = root_1$9();
       template_effect(() => set_attribute(img, "src", player.currentSong.albumArt));
       append($$anchor2, img);
     };
     var alternate = ($$anchor2) => {
-      var div_3 = root_2$7();
+      var div_3 = root_2$8();
       var node_1 = child(div_3);
       Icon(node_1, { name: "music", size: 18 });
       append($$anchor2, div_3);
@@ -5005,7 +5006,7 @@ function BottomBar($$anchor, $$props) {
   var node_2 = sibling(button, 2);
   {
     var consequent_1 = ($$anchor2) => {
-      var fragment = root_3$8();
+      var fragment = root_3$9();
       var div_4 = first_child(fragment);
       var span = child(div_4);
       var text = child(span);
@@ -5033,7 +5034,7 @@ function BottomBar($$anchor, $$props) {
       append($$anchor2, fragment);
     };
     var alternate_1 = ($$anchor2) => {
-      var div_5 = root_4$7();
+      var div_5 = root_4$8();
       append($$anchor2, div_5);
     };
     if_block(node_2, ($$render) => {
@@ -5129,24 +5130,24 @@ function BottomBar($$anchor, $$props) {
   pop();
 }
 delegate(["click", "input", "change"]);
-var root_1$7 = /* @__PURE__ */ from_html(`<div class="backdrop svelte-1e7gok1"></div>`);
-var root_2$6 = /* @__PURE__ */ from_html(`<div class="backdrop svelte-1e7gok1"></div>`);
-var root_3$7 = /* @__PURE__ */ from_html(`<div class="backdrop svelte-1e7gok1"></div>`);
-var root_5$7 = /* @__PURE__ */ from_html(`<p class="playlist-menu-empty svelte-1e7gok1">No playlists yet</p>`);
-var root_7$5 = /* @__PURE__ */ from_html(`<button class="playlist-menu-item svelte-1e7gok1"><!> <span> </span></button>`);
-var root_8$5 = /* @__PURE__ */ from_html(`<div class="playlist-menu-create svelte-1e7gok1"><input type="text" placeholder="Playlist name…" class="svelte-1e7gok1"/> <button class="playlist-menu-confirm svelte-1e7gok1">Create</button></div>`);
-var root_9$5 = /* @__PURE__ */ from_html(`<div class="playlist-menu-divider svelte-1e7gok1"></div> <button class="playlist-menu-item playlist-menu-new svelte-1e7gok1"><!> <span>New Playlist</span></button>`, 1);
-var root_4$6 = /* @__PURE__ */ from_html(`<div class="playlist-menu svelte-1e7gok1"><!> <!></div>`);
-var root_12$3 = /* @__PURE__ */ from_html(`<img alt="" class="svelte-1e7gok1"/>`);
-var root_13$4 = /* @__PURE__ */ from_html(`<div class="strip-art-placeholder svelte-1e7gok1"><!></div>`);
-var root_14$4 = /* @__PURE__ */ from_html(`<span class="strip-badge svelte-1e7gok1">MOST PLAYED</span>`);
-var root_11$4 = /* @__PURE__ */ from_html(`<button class="strip-card svelte-1e7gok1"><div class="strip-art svelte-1e7gok1"><!> <!> <div class="strip-play-overlay svelte-1e7gok1"><!></div></div> <p class="strip-title svelte-1e7gok1"> </p> <p class="strip-artist svelte-1e7gok1"> </p></button>`);
-var root_10$5 = /* @__PURE__ */ from_html(`<section class="recently-played svelte-1e7gok1"><h2 class="section-title svelte-1e7gok1">Recently Played</h2> <div class="recent-strip svelte-1e7gok1"></div></section>`);
-var root_15$2 = /* @__PURE__ */ from_html(`<button class="back-btn svelte-1e7gok1" title="Back to all songs"><!></button>`);
-var root_16$2 = /* @__PURE__ */ from_html(`<span class="folder-count svelte-1e7gok1"> </span>`);
+var root_1$8 = /* @__PURE__ */ from_html(`<div class="backdrop svelte-1e7gok1"></div>`);
+var root_2$7 = /* @__PURE__ */ from_html(`<div class="backdrop svelte-1e7gok1"></div>`);
+var root_3$8 = /* @__PURE__ */ from_html(`<div class="backdrop svelte-1e7gok1"></div>`);
+var root_5$8 = /* @__PURE__ */ from_html(`<p class="playlist-menu-empty svelte-1e7gok1">No playlists yet</p>`);
+var root_7$6 = /* @__PURE__ */ from_html(`<button class="playlist-menu-item svelte-1e7gok1"><!> <span> </span></button>`);
+var root_8$6 = /* @__PURE__ */ from_html(`<div class="playlist-menu-create svelte-1e7gok1"><input type="text" placeholder="Playlist name…" class="svelte-1e7gok1"/> <button class="playlist-menu-confirm svelte-1e7gok1">Create</button></div>`);
+var root_9$6 = /* @__PURE__ */ from_html(`<div class="playlist-menu-divider svelte-1e7gok1"></div> <button class="playlist-menu-item playlist-menu-new svelte-1e7gok1"><!> <span>New Playlist</span></button>`, 1);
+var root_4$7 = /* @__PURE__ */ from_html(`<div class="playlist-menu svelte-1e7gok1"><!> <!></div>`);
+var root_12$4 = /* @__PURE__ */ from_html(`<img alt="" class="svelte-1e7gok1"/>`);
+var root_13$5 = /* @__PURE__ */ from_html(`<div class="strip-art-placeholder svelte-1e7gok1"><!></div>`);
+var root_14$5 = /* @__PURE__ */ from_html(`<span class="strip-badge svelte-1e7gok1">MOST PLAYED</span>`);
+var root_11$5 = /* @__PURE__ */ from_html(`<button class="strip-card svelte-1e7gok1"><div class="strip-art svelte-1e7gok1"><!> <!> <div class="strip-play-overlay svelte-1e7gok1"><!></div></div> <p class="strip-title svelte-1e7gok1"> </p> <p class="strip-artist svelte-1e7gok1"> </p></button>`);
+var root_10$6 = /* @__PURE__ */ from_html(`<section class="recently-played svelte-1e7gok1"><h2 class="section-title svelte-1e7gok1">Recently Played</h2> <div class="recent-strip svelte-1e7gok1"></div></section>`);
+var root_15$3 = /* @__PURE__ */ from_html(`<button class="back-btn svelte-1e7gok1" title="Back to all songs"><!></button>`);
+var root_16$3 = /* @__PURE__ */ from_html(`<span class="folder-count svelte-1e7gok1"> </span>`);
 var root_19 = /* @__PURE__ */ from_html(`<span class="sort-dir-indicator svelte-1e7gok1"> </span>`);
-var root_18 = /* @__PURE__ */ from_html(`<button> <!></button>`);
-var root_17 = /* @__PURE__ */ from_html(`<div class="dropdown svelte-1e7gok1"></div>`);
+var root_18$1 = /* @__PURE__ */ from_html(`<button> <!></button>`);
+var root_17$1 = /* @__PURE__ */ from_html(`<div class="dropdown svelte-1e7gok1"></div>`);
 var root_20 = /* @__PURE__ */ from_html(`<div class="dropdown svelte-1e7gok1"><button>All</button> <button>Liked Only</button></div>`);
 var root_21 = /* @__PURE__ */ from_html(`<div class="empty-state svelte-1e7gok1"><!> <p>No songs in your library</p> <p class="sub svelte-1e7gok1">Go to Folders to scan your music</p> <button class="action-btn svelte-1e7gok1">Open Folders</button></div>`);
 var root_24 = /* @__PURE__ */ from_html(`<button class="num-play-btn svelte-1e7gok1"><span class="playing-indicator svelte-1e7gok1">▶</span></button>`);
@@ -5156,7 +5157,7 @@ var root_27 = /* @__PURE__ */ from_html(`<span class="row-num svelte-1e7gok1"></
 var root_28 = /* @__PURE__ */ from_html(`<img alt="" class="svelte-1e7gok1"/>`);
 var root_23 = /* @__PURE__ */ from_html(`<tr><td class="col-num svelte-1e7gok1"><div class="num-cell svelte-1e7gok1"><!></div></td><td class="col-title svelte-1e7gok1"><div class="title-cell svelte-1e7gok1"><div class="thumb svelte-1e7gok1"><!></div> <div class="title-meta svelte-1e7gok1"><span class="song-name svelte-1e7gok1"> </span> <span class="song-artist svelte-1e7gok1"> </span></div></div></td><td class="col-album text-muted svelte-1e7gok1"> </td><td class="col-date text-muted svelte-1e7gok1"> </td><td class="col-duration text-muted svelte-1e7gok1"> </td><td class="col-actions svelte-1e7gok1"><button class="row-action-btn svelte-1e7gok1" title="Add to playlist"><!></button></td></tr>`);
 var root_22 = /* @__PURE__ */ from_html(`<table class="songs-table svelte-1e7gok1"><thead class="svelte-1e7gok1"><tr class="svelte-1e7gok1"><th class="col-num svelte-1e7gok1">#</th><th class="col-title svelte-1e7gok1">Title</th><th class="col-album svelte-1e7gok1">Album</th><th class="col-date svelte-1e7gok1">Date Added</th><th class="col-duration svelte-1e7gok1"><!></th><th class="col-actions svelte-1e7gok1"></th></tr></thead><tbody></tbody></table>`);
-var root$6 = /* @__PURE__ */ from_html(`<!> <!> <!> <!> <div class="library-view svelte-1e7gok1"><div class="topbar svelte-1e7gok1"><div class="search-wrap svelte-1e7gok1"><!> <input type="text" placeholder="Search tracks, albums, artists…" class="svelte-1e7gok1"/></div> <div class="topbar-actions svelte-1e7gok1"><button class="icon-btn svelte-1e7gok1" title="Settings"><!></button></div></div> <div class="content svelte-1e7gok1"><!> <section class="all-songs"><div class="all-songs-header svelte-1e7gok1"><div class="title-wrap svelte-1e7gok1"><!> <h2 class="section-title svelte-1e7gok1"> </h2> <!></div> <div class="header-actions svelte-1e7gok1"><div class="dropdown-wrap svelte-1e7gok1"><button class="pill-btn svelte-1e7gok1"><!> </button> <!></div> <div class="dropdown-wrap svelte-1e7gok1"><button><!> </button> <!></div></div></div> <!></section></div></div>`, 1);
+var root$7 = /* @__PURE__ */ from_html(`<!> <!> <!> <!> <div class="library-view svelte-1e7gok1"><div class="topbar svelte-1e7gok1"><div class="search-wrap svelte-1e7gok1"><!> <input type="text" placeholder="Search tracks, albums, artists…" class="svelte-1e7gok1"/></div> <div class="topbar-actions svelte-1e7gok1"><button class="icon-btn svelte-1e7gok1" title="Settings"><!></button></div></div> <div class="content svelte-1e7gok1"><!> <section class="all-songs"><div class="all-songs-header svelte-1e7gok1"><div class="title-wrap svelte-1e7gok1"><!> <h2 class="section-title svelte-1e7gok1"> </h2> <!></div> <div class="header-actions svelte-1e7gok1"><div class="dropdown-wrap svelte-1e7gok1"><button class="pill-btn svelte-1e7gok1"><!> </button> <!></div> <div class="dropdown-wrap svelte-1e7gok1"><button><!> </button> <!></div></div></div> <!></section></div></div>`, 1);
 function LibraryView($$anchor, $$props) {
   push($$props, true);
   let searchQuery2 = /* @__PURE__ */ user_derived(() => ui.searchQuery);
@@ -5197,7 +5198,7 @@ function LibraryView($$anchor, $$props) {
   const sortLabel = /* @__PURE__ */ user_derived(() => `Sort: ${sortLabels[get(sortKey)]} ${get(sortArrow)}`);
   const filterLabel = /* @__PURE__ */ user_derived(() => get(filterMode) === "liked" ? "Filter: Liked" : "Filter");
   const activeFolder = /* @__PURE__ */ user_derived(() => ui.selectedFolderId ? library.folders.find((f) => f.id === ui.selectedFolderId) ?? null : null);
-  const baseSongs = /* @__PURE__ */ user_derived(() => get(activeFolder) ? library.songs.filter((s) => s.path.startsWith(get(activeFolder).path)) : library.songs);
+  const baseSongs = /* @__PURE__ */ user_derived(() => ui.selectedSubFolderPath ? library.songs.filter((s) => s.path.startsWith(ui.selectedSubFolderPath + "/")) : get(activeFolder) ? library.songs.filter((s) => s.path.startsWith(get(activeFolder).path)) : library.songs);
   const filteredSongs = /* @__PURE__ */ user_derived(() => get(searchQuery2).trim() ? get(baseSongs).filter((s) => s.title.toLowerCase().includes(get(searchQuery2).toLowerCase()) || s.artist.toLowerCase().includes(get(searchQuery2).toLowerCase()) || s.album.toLowerCase().includes(get(searchQuery2).toLowerCase())) : get(baseSongs));
   const afterFilterSongs = /* @__PURE__ */ user_derived(() => get(filterMode) === "liked" ? get(filteredSongs).filter((s) => s.liked) : get(filteredSongs));
   const displaySongs = /* @__PURE__ */ user_derived(() => (() => {
@@ -5256,11 +5257,11 @@ function LibraryView($$anchor, $$props) {
     playlistStore.addSong(pl.id, get(playlistMenuSongId));
     closePlaylistMenu();
   }
-  var fragment = root$6();
+  var fragment = root$7();
   var node = first_child(fragment);
   {
     var consequent = ($$anchor2) => {
-      var div = root_1$7();
+      var div = root_1$8();
       delegated("click", div, () => set(showSortDropdown, false));
       append($$anchor2, div);
     };
@@ -5271,7 +5272,7 @@ function LibraryView($$anchor, $$props) {
   var node_1 = sibling(node, 2);
   {
     var consequent_1 = ($$anchor2) => {
-      var div_1 = root_2$6();
+      var div_1 = root_2$7();
       delegated("click", div_1, () => set(showFilterDropdown, false));
       append($$anchor2, div_1);
     };
@@ -5282,7 +5283,7 @@ function LibraryView($$anchor, $$props) {
   var node_2 = sibling(node_1, 2);
   {
     var consequent_2 = ($$anchor2) => {
-      var div_2 = root_3$7();
+      var div_2 = root_3$8();
       delegated("click", div_2, closePlaylistMenu);
       append($$anchor2, div_2);
     };
@@ -5293,18 +5294,18 @@ function LibraryView($$anchor, $$props) {
   var node_3 = sibling(node_2, 2);
   {
     var consequent_5 = ($$anchor2) => {
-      var div_3 = root_4$6();
+      var div_3 = root_4$7();
       var node_4 = child(div_3);
       {
         var consequent_3 = ($$anchor3) => {
-          var p = root_5$7();
+          var p = root_5$8();
           append($$anchor3, p);
         };
         var alternate = ($$anchor3) => {
           var fragment_1 = comment();
           var node_5 = first_child(fragment_1);
           each(node_5, 17, () => playlistStore.all, index, ($$anchor4, pl) => {
-            var button = root_7$5();
+            var button = root_7$6();
             var node_6 = child(button);
             Icon(node_6, { name: "list-music", size: 13 });
             var span = sibling(node_6, 2);
@@ -5323,7 +5324,7 @@ function LibraryView($$anchor, $$props) {
       var node_7 = sibling(node_4, 2);
       {
         var consequent_4 = ($$anchor3) => {
-          var div_4 = root_8$5();
+          var div_4 = root_8$6();
           var input = child(div_4);
           autofocus(input);
           var button_1 = sibling(input, 2);
@@ -5339,7 +5340,7 @@ function LibraryView($$anchor, $$props) {
           append($$anchor3, div_4);
         };
         var alternate_1 = ($$anchor3) => {
-          var fragment_2 = root_9$5();
+          var fragment_2 = root_9$6();
           var button_2 = sibling(first_child(fragment_2), 2);
           var node_8 = child(button_2);
           Icon(node_8, { name: "plus", size: 13 });
@@ -5374,20 +5375,20 @@ function LibraryView($$anchor, $$props) {
   var node_11 = child(div_9);
   {
     var consequent_8 = ($$anchor2) => {
-      var section = root_10$5();
+      var section = root_10$6();
       var div_10 = sibling(child(section), 2);
       each(div_10, 21, () => library.recentlyPlayed, index, ($$anchor3, song, i) => {
-        var button_4 = root_11$4();
+        var button_4 = root_11$5();
         var div_11 = child(button_4);
         var node_12 = child(div_11);
         {
           var consequent_6 = ($$anchor4) => {
-            var img = root_12$3();
+            var img = root_12$4();
             template_effect(() => set_attribute(img, "src", get(song).albumArt));
             append($$anchor4, img);
           };
           var alternate_2 = ($$anchor4) => {
-            var div_12 = root_13$4();
+            var div_12 = root_13$5();
             var node_13 = child(div_12);
             Icon(node_13, { name: "music", size: 28 });
             append($$anchor4, div_12);
@@ -5400,7 +5401,7 @@ function LibraryView($$anchor, $$props) {
         var node_14 = sibling(node_12, 2);
         {
           var consequent_7 = ($$anchor4) => {
-            var span_1 = root_14$4();
+            var span_1 = root_14$5();
             append($$anchor4, span_1);
           };
           if_block(node_14, ($$render) => {
@@ -5424,7 +5425,7 @@ function LibraryView($$anchor, $$props) {
       append($$anchor2, section);
     };
     if_block(node_11, ($$render) => {
-      if (library.recentlyPlayed.length > 0 && !get(searchQuery2) && !get(activeFolder)) $$render(consequent_8);
+      if (library.recentlyPlayed.length > 0 && !get(searchQuery2) && !get(activeFolder) && !ui.selectedSubFolderPath) $$render(consequent_8);
     });
   }
   var section_1 = sibling(node_11, 2);
@@ -5433,14 +5434,14 @@ function LibraryView($$anchor, $$props) {
   var node_16 = child(div_15);
   {
     var consequent_9 = ($$anchor2) => {
-      var button_5 = root_15$2();
+      var button_5 = root_15$3();
       var node_17 = child(button_5);
       Icon(node_17, { name: "arrow-right", size: 14, class: "back-arrow" });
       delegated("click", button_5, () => ui.clearFolderFilter());
       append($$anchor2, button_5);
     };
     if_block(node_16, ($$render) => {
-      if (get(activeFolder)) $$render(consequent_9);
+      if (get(activeFolder) || ui.selectedSubFolderPath) $$render(consequent_9);
     });
   }
   var h2 = sibling(node_16, 2);
@@ -5448,13 +5449,13 @@ function LibraryView($$anchor, $$props) {
   var node_18 = sibling(h2, 2);
   {
     var consequent_10 = ($$anchor2) => {
-      var span_2 = root_16$2();
+      var span_2 = root_16$3();
       var text_4 = child(span_2);
       template_effect(() => set_text(text_4, `${get(displaySongs).length ?? ""} songs`));
       append($$anchor2, span_2);
     };
     if_block(node_18, ($$render) => {
-      if (get(activeFolder)) $$render(consequent_10);
+      if (get(activeFolder) || ui.selectedSubFolderPath) $$render(consequent_10);
     });
   }
   var div_16 = sibling(div_15, 2);
@@ -5466,12 +5467,12 @@ function LibraryView($$anchor, $$props) {
   var node_20 = sibling(button_6, 2);
   {
     var consequent_12 = ($$anchor2) => {
-      var div_18 = root_17();
+      var div_18 = root_17$1();
       each(div_18, 21, () => Object.entries(sortLabels), index, ($$anchor3, $$item) => {
         var $$array = /* @__PURE__ */ user_derived(() => to_array(get($$item), 2));
         let key2 = () => get($$array)[0];
         let label = () => get($$array)[1];
-        var button_7 = root_18();
+        var button_7 = root_18$1();
         let classes;
         var text_6 = child(button_7);
         var node_21 = sibling(text_6);
@@ -5648,13 +5649,18 @@ function LibraryView($$anchor, $$props) {
       else $$render(alternate_5, -1);
     });
   }
-  template_effect(() => {
-    set_value(input_1, ui.searchQuery);
-    set_text(text_3, get(activeFolder) ? get(activeFolder).name : "All Songs");
-    set_text(text_5, ` ${get(sortLabel) ?? ""}`);
-    classes_1 = set_class(button_8, 1, "pill-btn svelte-1e7gok1", null, classes_1, { active: get(filterMode) !== "all" });
-    set_text(text_8, ` ${get(filterLabel) ?? ""}`);
-  });
+  template_effect(
+    ($0) => {
+      set_value(input_1, ui.searchQuery);
+      set_text(text_3, $0);
+      set_text(text_5, ` ${get(sortLabel) ?? ""}`);
+      classes_1 = set_class(button_8, 1, "pill-btn svelte-1e7gok1", null, classes_1, { active: get(filterMode) !== "all" });
+      set_text(text_8, ` ${get(filterLabel) ?? ""}`);
+    },
+    [
+      () => ui.selectedSubFolderPath ? ui.selectedSubFolderPath.split("/").pop() ?? "Folder" : get(activeFolder) ? get(activeFolder).name : "All Songs"
+    ]
+  );
   delegated("input", input_1, (e) => ui.setSearchQuery(e.target.value));
   delegated("click", button_6, () => {
     set(showSortDropdown, !get(showSortDropdown));
@@ -5668,14 +5674,14 @@ function LibraryView($$anchor, $$props) {
   pop();
 }
 delegate(["click", "keydown", "input", "dblclick"]);
-var root_1$6 = /* @__PURE__ */ from_html(`<div class="scan-card svelte-1enmgjr"><p class="label-sm">Current Operation</p> <div class="scan-row svelte-1enmgjr"><p class="scan-path svelte-1enmgjr"> </p> <span class="scan-pct svelte-1enmgjr"> </span></div> <div class="progress-track svelte-1enmgjr"><div class="progress-fill svelte-1enmgjr"></div></div> <div class="scan-meta svelte-1enmgjr"><span> </span> <span class="dot svelte-1enmgjr">•</span> <span>Scanning…</span></div></div>`);
-var root_2$5 = /* @__PURE__ */ from_html(`<div class="folder-card svelte-1enmgjr"><div class="folder-art-wrap svelte-1enmgjr"><!> <span class="folder-badge svelte-1enmgjr">LOCAL DRIVE</span></div> <div class="folder-info svelte-1enmgjr"><p class="folder-name svelte-1enmgjr"> </p> <p class="folder-meta svelte-1enmgjr"> </p></div> <div class="folder-actions svelte-1enmgjr"><button class="icon-action svelte-1enmgjr" title="Rescan"><!></button> <button class="icon-action danger svelte-1enmgjr" title="Remove"><!></button></div></div>`);
-var root_4$5 = /* @__PURE__ */ from_html(`<span class="activity-badge error svelte-1enmgjr"> </span>`);
-var root_5$6 = /* @__PURE__ */ from_html(`<div class="activity-row svelte-1enmgjr"><!> <span class="activity-path svelte-1enmgjr"> </span> <span class="activity-count svelte-1enmgjr"> </span> <span class="activity-date svelte-1enmgjr"> </span></div>`);
-var root_3$6 = /* @__PURE__ */ from_html(`<div class="activity-section"><div class="section-header svelte-1enmgjr"><h3 class="svelte-1enmgjr">Recent Import Activity</h3> <div class="activity-badges svelte-1enmgjr"><span class="activity-badge success svelte-1enmgjr"> </span> <!></div></div> <div class="activity-list svelte-1enmgjr"></div></div>`);
-var root_6$5 = /* @__PURE__ */ from_html(`<div class="modal-backdrop svelte-1enmgjr" role="presentation"><div class="modal svelte-1enmgjr" role="dialog" aria-modal="true"><div class="modal-icon svelte-1enmgjr"><!></div> <h3 class="modal-title svelte-1enmgjr">Remove Folder</h3> <p class="modal-body svelte-1enmgjr"><strong class="svelte-1enmgjr"> </strong> will be removed from your library along with all its tracks.
+var root_1$7 = /* @__PURE__ */ from_html(`<div class="scan-card svelte-1enmgjr"><p class="label-sm">Current Operation</p> <div class="scan-row svelte-1enmgjr"><p class="scan-path svelte-1enmgjr"> </p> <span class="scan-pct svelte-1enmgjr"> </span></div> <div class="progress-track svelte-1enmgjr"><div class="progress-fill svelte-1enmgjr"></div></div> <div class="scan-meta svelte-1enmgjr"><span> </span> <span class="dot svelte-1enmgjr">•</span> <span>Scanning…</span></div></div>`);
+var root_2$6 = /* @__PURE__ */ from_html(`<div class="folder-card svelte-1enmgjr" role="button" tabindex="0"><div class="folder-art-wrap svelte-1enmgjr"><!> <span class="folder-badge svelte-1enmgjr">LOCAL DRIVE</span></div> <div class="folder-info svelte-1enmgjr"><p class="folder-name svelte-1enmgjr"> </p> <p class="folder-meta svelte-1enmgjr"> </p></div> <div class="folder-actions svelte-1enmgjr"><button class="icon-action svelte-1enmgjr" title="Rescan"><!></button> <button class="icon-action danger svelte-1enmgjr" title="Remove"><!></button></div></div>`);
+var root_4$6 = /* @__PURE__ */ from_html(`<span class="activity-badge error svelte-1enmgjr"> </span>`);
+var root_5$7 = /* @__PURE__ */ from_html(`<div class="activity-row svelte-1enmgjr"><!> <span class="activity-path svelte-1enmgjr"> </span> <span class="activity-count svelte-1enmgjr"> </span> <span class="activity-date svelte-1enmgjr"> </span></div>`);
+var root_3$7 = /* @__PURE__ */ from_html(`<div class="activity-section"><div class="section-header svelte-1enmgjr"><h3 class="svelte-1enmgjr">Recent Import Activity</h3> <div class="activity-badges svelte-1enmgjr"><span class="activity-badge success svelte-1enmgjr"> </span> <!></div></div> <div class="activity-list svelte-1enmgjr"></div></div>`);
+var root_6$6 = /* @__PURE__ */ from_html(`<div class="modal-backdrop svelte-1enmgjr" role="presentation"><div class="modal svelte-1enmgjr" role="dialog" aria-modal="true"><div class="modal-icon svelte-1enmgjr"><!></div> <h3 class="modal-title svelte-1enmgjr">Remove Folder</h3> <p class="modal-body svelte-1enmgjr"><strong class="svelte-1enmgjr"> </strong> will be removed from your library along with all its tracks.
         Files on disk will not be deleted.</p> <div class="modal-actions svelte-1enmgjr"><button class="modal-btn cancel svelte-1enmgjr">Cancel</button> <button class="modal-btn confirm svelte-1enmgjr">Remove</button></div></div></div>`);
-var root$5 = /* @__PURE__ */ from_html(`<div class="folders-view svelte-1enmgjr"><div class="topbar svelte-1enmgjr"><h1 class="page-title svelte-1enmgjr">File Manager</h1> <div class="topbar-right svelte-1enmgjr"><div class="search-wrap svelte-1enmgjr"><!> <input type="text" placeholder="Search folders…" class="svelte-1enmgjr"/></div> <button class="icon-btn svelte-1enmgjr" title="Settings"><!></button> <button class="icon-btn svelte-1enmgjr" title="Profile"><!></button></div></div> <div class="content svelte-1enmgjr"><div class="hero svelte-1enmgjr"><div class="hero-text"><h2 class="svelte-1enmgjr">Optimize Your Library</h2> <p class="svelte-1enmgjr">lokamusic scans your local directories to build a metadata-rich music library automatically.</p></div> <div class="hero-actions svelte-1enmgjr"><button class="scan-btn svelte-1enmgjr">Scan New Folder <!></button> <div class="secondary-actions svelte-1enmgjr"><button class="secondary-btn svelte-1enmgjr"><!> <span>Import Files</span></button> <button class="secondary-btn disabled svelte-1enmgjr" disabled=""><!> <span>Sync Cloud</span></button></div></div></div> <!> <div class="folders-section"><div class="section-header svelte-1enmgjr"><h3 class="svelte-1enmgjr">Watched Folders</h3> <button class="link-btn svelte-1enmgjr">Manage All Permissions</button></div> <div class="folders-grid svelte-1enmgjr"><!> <button class="folder-card add-card svelte-1enmgjr"><div class="add-icon svelte-1enmgjr"><!></div> <p class="folder-name svelte-1enmgjr">Connect New Folder</p> <p class="folder-meta svelte-1enmgjr">Scan a local directory</p></button></div></div> <!></div></div> <!>`, 1);
+var root$6 = /* @__PURE__ */ from_html(`<div class="folders-view svelte-1enmgjr"><div class="topbar svelte-1enmgjr"><h1 class="page-title svelte-1enmgjr">File Manager</h1> <div class="topbar-right svelte-1enmgjr"><div class="search-wrap svelte-1enmgjr"><!> <input type="text" placeholder="Search folders…" class="svelte-1enmgjr"/></div> <button class="icon-btn svelte-1enmgjr" title="Settings"><!></button> <button class="icon-btn svelte-1enmgjr" title="Profile"><!></button></div></div> <div class="content svelte-1enmgjr"><div class="hero svelte-1enmgjr"><div class="hero-text"><h2 class="svelte-1enmgjr">Optimize Your Library</h2> <p class="svelte-1enmgjr">lokamusic scans your local directories to build a metadata-rich music library automatically.</p></div> <div class="hero-actions svelte-1enmgjr"><button class="scan-btn svelte-1enmgjr">Scan New Folder <!></button> <div class="secondary-actions svelte-1enmgjr"><button class="secondary-btn disabled svelte-1enmgjr" disabled=""><!> <span>Sync Cloud</span></button></div></div></div> <!> <div class="folders-section"><div class="section-header svelte-1enmgjr"><h3 class="svelte-1enmgjr">Watched Folders</h3> <button class="link-btn svelte-1enmgjr">Manage All Permissions</button></div> <div class="folders-grid svelte-1enmgjr"><!> <button class="folder-card add-card svelte-1enmgjr"><div class="add-icon svelte-1enmgjr"><!></div> <p class="folder-name svelte-1enmgjr">Connect New Folder</p> <p class="folder-meta svelte-1enmgjr">Scan a local directory</p></button></div></div> <!></div></div> <!>`, 1);
 function FoldersView($$anchor, $$props) {
   push($$props, true);
   let folderToRemove = /* @__PURE__ */ state(null);
@@ -5697,12 +5703,6 @@ function FoldersView($$anchor, $$props) {
     const folder = await window.electronAPI.invoke("library:add-folder", path);
     if (folder) library.addFolder(folder);
   }
-  async function importFiles() {
-    const paths = await window.electronAPI.invoke("dialog:select-files");
-    if (paths.length) {
-      await window.electronAPI.invoke("library:import-files", paths);
-    }
-  }
   async function rescanFolder(id) {
     await window.electronAPI.invoke("library:scan-folder", id);
   }
@@ -5713,7 +5713,7 @@ function FoldersView($$anchor, $$props) {
     library.removeFolder(id);
     await window.electronAPI.invoke("library:remove-folder", id);
   }
-  var fragment = root$5();
+  var fragment = root$6();
   var div = first_child(fragment);
   var div_1 = child(div);
   var div_2 = sibling(child(div_1), 2);
@@ -5735,14 +5735,11 @@ function FoldersView($$anchor, $$props) {
   var div_7 = sibling(button_2, 2);
   var button_3 = child(div_7);
   var node_4 = child(button_3);
-  Icon(node_4, { name: "import", size: 20 });
-  var button_4 = sibling(button_3, 2);
-  var node_5 = child(button_4);
-  Icon(node_5, { name: "cloud", size: 20 });
-  var node_6 = sibling(div_5, 2);
+  Icon(node_4, { name: "cloud", size: 20 });
+  var node_5 = sibling(div_5, 2);
   {
     var consequent = ($$anchor2) => {
-      var div_8 = root_1$6();
+      var div_8 = root_1$7();
       var div_9 = sibling(child(div_8), 2);
       var p = child(div_9);
       var text = child(p);
@@ -5766,18 +5763,18 @@ function FoldersView($$anchor, $$props) {
       );
       append($$anchor2, div_8);
     };
-    if_block(node_6, ($$render) => {
+    if_block(node_5, ($$render) => {
       if (ui.scanProgress) $$render(consequent);
     });
   }
-  var div_13 = sibling(node_6, 2);
+  var div_13 = sibling(node_5, 2);
   var div_14 = sibling(child(div_13), 2);
-  var node_7 = child(div_14);
-  each(node_7, 17, () => library.folders, index, ($$anchor2, folder) => {
-    var div_15 = root_2$5();
+  var node_6 = child(div_14);
+  each(node_6, 17, () => library.folders, index, ($$anchor2, folder) => {
+    var div_15 = root_2$6();
     var div_16 = child(div_15);
-    var node_8 = child(div_16);
-    FolderArt(node_8, {
+    var node_7 = child(div_16);
+    FolderArt(node_7, {
       get folderId() {
         return get(folder).id;
       },
@@ -5789,12 +5786,12 @@ function FoldersView($$anchor, $$props) {
     var p_2 = sibling(p_1, 2);
     var text_4 = child(p_2);
     var div_18 = sibling(div_17, 2);
-    var button_5 = child(div_18);
+    var button_4 = child(div_18);
+    var node_8 = child(button_4);
+    Icon(node_8, { name: "refresh", size: 14 });
+    var button_5 = sibling(button_4, 2);
     var node_9 = child(button_5);
-    Icon(node_9, { name: "refresh", size: 14 });
-    var button_6 = sibling(button_5, 2);
-    var node_10 = child(button_6);
-    Icon(node_10, { name: "trash", size: 14 });
+    Icon(node_9, { name: "trash", size: 14 });
     template_effect(
       ($0) => {
         set_text(text_3, get(folder).name);
@@ -5802,41 +5799,49 @@ function FoldersView($$anchor, $$props) {
       },
       [() => formatBytes(get(folder).sizeBytes)]
     );
-    delegated("click", button_5, () => rescanFolder(get(folder).id));
-    delegated("click", button_6, () => set(folderToRemove, get(folder), true));
+    delegated("click", div_15, () => ui.navigateToFolder(get(folder).id));
+    delegated("keydown", div_15, (e) => e.key === "Enter" && ui.navigateToFolder(get(folder).id));
+    delegated("click", button_4, (e) => {
+      e.stopPropagation();
+      rescanFolder(get(folder).id);
+    });
+    delegated("click", button_5, (e) => {
+      e.stopPropagation();
+      set(folderToRemove, get(folder), true);
+    });
     append($$anchor2, div_15);
   });
-  var button_7 = sibling(node_7, 2);
-  var div_19 = child(button_7);
-  var node_11 = child(div_19);
-  Icon(node_11, { name: "plus", size: 28 });
-  var node_12 = sibling(div_13, 2);
+  var button_6 = sibling(node_6, 2);
+  var div_19 = child(button_6);
+  var node_10 = child(div_19);
+  Icon(node_10, { name: "plus", size: 28 });
+  var node_11 = sibling(div_13, 2);
   {
     var consequent_2 = ($$anchor2) => {
-      var div_20 = root_3$6();
+      var div_20 = root_3$7();
       var div_21 = child(div_20);
       var div_22 = sibling(child(div_21), 2);
       var span_2 = child(div_22);
       var text_5 = child(span_2);
-      var node_13 = sibling(span_2, 2);
+      var node_12 = sibling(span_2, 2);
       {
         var consequent_1 = ($$anchor3) => {
-          var span_3 = root_4$5();
+          var span_3 = root_4$6();
           var text_6 = child(span_3);
           template_effect(($0) => set_text(text_6, `Errors: ${$0 ?? ""}`), [() => library.scanHistory.reduce((a, h) => a + h.errors, 0)]);
           append($$anchor3, span_3);
         };
         var d_1 = /* @__PURE__ */ user_derived(() => library.scanHistory.some((h) => h.errors > 0));
-        if_block(node_13, ($$render) => {
+        if_block(node_12, ($$render) => {
           if (get(d_1)) $$render(consequent_1);
         });
       }
       var div_23 = sibling(div_21, 2);
       each(div_23, 21, () => library.scanHistory.slice(0, 10), index, ($$anchor3, event2) => {
-        var div_24 = root_5$6();
-        var node_14 = child(div_24);
-        Icon(node_14, { name: "check", size: 14, class: "check-icon" });
-        var span_4 = sibling(node_14, 2);
+        var div_24 = root_5$7();
+        var node_13 = child(div_24);
+        Icon(node_13, { name: "check", size: 14, class: "check-icon" });
+        var span_4 = sibling(node_13, 2);
         var text_7 = child(span_4);
         var span_5 = sibling(span_4, 2);
         var text_8 = child(span_5);
@@ -5855,42 +5860,361 @@ function FoldersView($$anchor, $$props) {
       template_effect(($0) => set_text(text_5, `Success: ${$0 ?? ""}`), [() => library.scanHistory.reduce((a, h) => a + h.success, 0)]);
       append($$anchor2, div_20);
     };
-    if_block(node_12, ($$render) => {
+    if_block(node_11, ($$render) => {
       if (library.scanHistory.length > 0) $$render(consequent_2);
     });
   }
-  var node_15 = sibling(div, 2);
+  var node_14 = sibling(div, 2);
   {
     var consequent_3 = ($$anchor2) => {
-      var div_25 = root_6$5();
+      var div_25 = root_6$6();
       var div_26 = child(div_25);
       var div_27 = child(div_26);
-      var node_16 = child(div_27);
-      Icon(node_16, { name: "trash", size: 22 });
+      var node_15 = child(div_27);
+      Icon(node_15, { name: "trash", size: 22 });
       var p_3 = sibling(div_27, 4);
       var strong = child(p_3);
       var text_10 = child(strong);
       var div_28 = sibling(p_3, 2);
-      var button_8 = child(div_28);
-      var button_9 = sibling(button_8, 2);
+      var button_7 = child(div_28);
+      var button_8 = sibling(button_7, 2);
       template_effect(() => set_text(text_10, get(folderToRemove).name));
       delegated("click", div_25, () => set(folderToRemove, null));
       delegated("click", div_26, (e) => e.stopPropagation());
-      delegated("click", button_8, () => set(folderToRemove, null));
-      delegated("click", button_9, confirmRemove);
+      delegated("click", button_7, () => set(folderToRemove, null));
+      delegated("click", button_8, confirmRemove);
       append($$anchor2, div_25);
     };
-    if_block(node_15, ($$render) => {
+    if_block(node_14, ($$render) => {
       if (get(folderToRemove)) $$render(consequent_3);
     });
   }
   delegated("click", button_2, scanNewFolder);
-  delegated("click", button_3, importFiles);
-  delegated("click", button_7, scanNewFolder);
+  delegated("click", button_6, scanNewFolder);
   append($$anchor, fragment);
   pop();
 }
-delegate(["click"]);
+delegate(["click", "keydown"]);
+var root_1$6 = /* @__PURE__ */ from_html(`<span class="crumb-sep svelte-1om5j5s"><!></span> <button> </button>`, 1);
+var root_2$5 = /* @__PURE__ */ from_html(`<button class="play-all-btn svelte-1om5j5s"><!> Play All</button>`);
+var root_4$5 = /* @__PURE__ */ from_html(`<p class="section-label svelte-1om5j5s">Sub-folders</p>`);
+var root_6$5 = /* @__PURE__ */ from_html(`<div class="art-placeholder svelte-1om5j5s"><!></div>`);
+var root_7$5 = /* @__PURE__ */ from_html(`<img alt="" class="art-single svelte-1om5j5s"/>`);
+var root_10$5 = /* @__PURE__ */ from_html(`<img alt="" class="svelte-1om5j5s"/>`);
+var root_11$4 = /* @__PURE__ */ from_html(`<img alt="" class="svelte-1om5j5s"/>`);
+var root_9$5 = /* @__PURE__ */ from_html(`<div class="art-cell svelte-1om5j5s"><!></div>`);
+var root_8$5 = /* @__PURE__ */ from_html(`<div class="art-grid svelte-1om5j5s"></div>`);
+var root_5$6 = /* @__PURE__ */ from_html(`<button class="folder-card svelte-1om5j5s"><div class="card-art svelte-1om5j5s"><!> <div class="card-hover-overlay svelte-1om5j5s"><!></div></div> <p class="card-name svelte-1om5j5s"> </p> <p class="card-meta svelte-1om5j5s"> </p></button>`);
+var root_3$6 = /* @__PURE__ */ from_html(`<!> <div class="folders-grid svelte-1om5j5s"></div>`, 1);
+var root_13$4 = /* @__PURE__ */ from_html(`<p class="section-label songs-label svelte-1om5j5s">Songs in this folder</p>`);
+var root_15$2 = /* @__PURE__ */ from_html(`<button class="num-btn svelte-1om5j5s"><span class="playing-dot svelte-1om5j5s">▶</span></button>`);
+var root_16$2 = /* @__PURE__ */ from_html(`<button class="num-btn svelte-1om5j5s"><!></button>`);
+var root_17 = /* @__PURE__ */ from_html(`<span class="row-num svelte-1om5j5s"></span>`);
+var root_14$4 = /* @__PURE__ */ from_html(`<tr><td class="col-num svelte-1om5j5s"><!></td><td class="svelte-1om5j5s"><div class="title-meta svelte-1om5j5s"><span> </span> <span class="song-album svelte-1om5j5s"> </span></div></td><td class="col-artist text-muted svelte-1om5j5s"> </td><td class="col-dur text-muted svelte-1om5j5s"> </td></tr>`);
+var root_12$3 = /* @__PURE__ */ from_html(`<!> <table class="songs-table svelte-1om5j5s"><thead class="svelte-1om5j5s"><tr><th class="col-num svelte-1om5j5s">#</th><th class="svelte-1om5j5s">Title</th><th class="col-artist svelte-1om5j5s">Artist</th><th class="col-dur svelte-1om5j5s"><!></th></tr></thead><tbody></tbody></table>`, 1);
+var root_18 = /* @__PURE__ */ from_html(`<div class="empty-state svelte-1om5j5s"><!> <p class="svelte-1om5j5s">No folders yet</p> <p class="sub svelte-1om5j5s">Go to Folders to add a watched folder</p></div>`);
+var root$5 = /* @__PURE__ */ from_html(`<div class="folder-tree-view svelte-1om5j5s"><div class="topbar svelte-1om5j5s"><div class="breadcrumbs svelte-1om5j5s"><button>Folders</button> <!></div> <!></div> <div class="content svelte-1om5j5s"><!> <!> <!></div></div>`);
+function FolderTreeView($$anchor, $$props) {
+  push($$props, true);
+  let stack = /* @__PURE__ */ state(proxy([]));
+  let hoveredRowId = /* @__PURE__ */ state(null);
+  const currentLevel = /* @__PURE__ */ user_derived(() => get(stack).length > 0 ? get(stack)[get(stack).length - 1] : null);
+  const subFolders = /* @__PURE__ */ user_derived(() => {
+    if (!get(currentLevel)) {
+      return library.folders.map((f) => ({
+        name: f.name,
+        path: f.path,
+        folderId: f.id,
+        songCount: f.songCount
+      }));
+    }
+    const prefix = get(currentLevel).path + "/";
+    const childMap = /* @__PURE__ */ new Map();
+    for (const song of library.songs) {
+      if (!song.path.startsWith(prefix)) continue;
+      const rel = song.path.slice(prefix.length);
+      const idx = rel.indexOf("/");
+      if (idx === -1) continue;
+      const childPath = prefix + rel.slice(0, idx);
+      childMap.set(childPath, (childMap.get(childPath) ?? 0) + 1);
+    }
+    return Array.from(childMap.entries()).map(([path, count]) => ({ name: path.split("/").pop(), path, songCount: count })).sort((a, b) => a.name.localeCompare(b.name));
+  });
+  const songs2 = /* @__PURE__ */ user_derived(() => {
+    if (!get(currentLevel)) return [];
+    const prefix = get(currentLevel).path + "/";
+    return library.songs.filter((s) => s.path.startsWith(prefix));
+  });
+  const directSongs = /* @__PURE__ */ user_derived(() => {
+    if (!get(currentLevel)) return [];
+    const prefix = get(currentLevel).path + "/";
+    return library.songs.filter((s) => {
+      if (!s.path.startsWith(prefix)) return false;
+      const rel = s.path.slice(prefix.length);
+      return !rel.includes("/");
+    });
+  });
+  function getArt(path) {
+    const prefix = path + "/";
+    const seen = /* @__PURE__ */ new Set();
+    const result = [];
+    for (const song of library.songs) {
+      if (!song.albumArt || !song.path.startsWith(prefix)) continue;
+      if (!seen.has(song.albumArt)) {
+        seen.add(song.albumArt);
+        result.push(song.albumArt);
+        if (result.length === 4) break;
+      }
+    }
+    return result;
+  }
+  function enter(item) {
+    set(
+      stack,
+      [
+        ...get(stack),
+        { name: item.name, path: item.path, folderId: item.folderId }
+      ],
+      true
+    );
+  }
+  function goTo(index2) {
+    set(stack, get(stack).slice(0, index2 + 1), true);
+  }
+  function goRoot() {
+    set(stack, [], true);
+  }
+  function formatDuration(s) {
+    if (!s) return "--";
+    return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+  }
+  function playSong(song, queue2) {
+    player.playSong(song, queue2);
+    window.electronAPI.invoke("library:update-play", song.id);
+  }
+  function playAll() {
+    if (get(songs2).length) playSong(get(songs2)[0], get(songs2));
+  }
+  var div = root$5();
+  var div_1 = child(div);
+  var div_2 = child(div_1);
+  var button = child(div_2);
+  let classes;
+  var node = sibling(button, 2);
+  each(node, 17, () => get(stack), index, ($$anchor2, crumb, i) => {
+    var fragment = root_1$6();
+    var span = first_child(fragment);
+    var node_1 = child(span);
+    Icon(node_1, { name: "chevron-right", size: 12 });
+    var button_1 = sibling(span, 2);
+    let classes_1;
+    var text = child(button_1);
+    template_effect(() => {
+      classes_1 = set_class(button_1, 1, "crumb svelte-1om5j5s", null, classes_1, { active: i === get(stack).length - 1 });
+      set_text(text, get(crumb).name);
+    });
+    delegated("click", button_1, () => goTo(i));
+    append($$anchor2, fragment);
+  });
+  var node_2 = sibling(div_2, 2);
+  {
+    var consequent = ($$anchor2) => {
+      var button_2 = root_2$5();
+      var node_3 = child(button_2);
+      Icon(node_3, { name: "play", size: 13 });
+      delegated("click", button_2, playAll);
+      append($$anchor2, button_2);
+    };
+    if_block(node_2, ($$render) => {
+      if (get(currentLevel) && get(songs2).length > 0) $$render(consequent);
+    });
+  }
+  var div_3 = sibling(div_1, 2);
+  var node_4 = child(div_3);
+  {
+    var consequent_6 = ($$anchor2) => {
+      var fragment_1 = root_3$6();
+      var node_5 = first_child(fragment_1);
+      {
+        var consequent_1 = ($$anchor3) => {
+          var p = root_4$5();
+          append($$anchor3, p);
+        };
+        if_block(node_5, ($$render) => {
+          if (get(currentLevel) && get(directSongs).length > 0) $$render(consequent_1);
+        });
+      }
+      var div_4 = sibling(node_5, 2);
+      each(div_4, 21, () => get(subFolders), index, ($$anchor3, item) => {
+        const arts = /* @__PURE__ */ user_derived(() => getArt(get(item).path));
+        var button_3 = root_5$6();
+        var div_5 = child(button_3);
+        var node_6 = child(div_5);
+        {
+          var consequent_2 = ($$anchor4) => {
+            var div_6 = root_6$5();
+            var node_7 = child(div_6);
+            Icon(node_7, { name: "folder", size: 36 });
+            append($$anchor4, div_6);
+          };
+          var consequent_3 = ($$anchor4) => {
+            var img = root_7$5();
+            template_effect(() => set_attribute(img, "src", get(arts)[0]));
+            append($$anchor4, img);
+          };
+          var alternate = ($$anchor4) => {
+            var div_7 = root_8$5();
+            each(div_7, 20, () => Array(4), index, ($$anchor5, _, i) => {
+              var div_8 = root_9$5();
+              var node_8 = child(div_8);
+              {
+                var consequent_4 = ($$anchor6) => {
+                  var img_1 = root_10$5();
+                  template_effect(() => set_attribute(img_1, "src", get(arts)[i]));
+                  append($$anchor6, img_1);
+                };
+                var consequent_5 = ($$anchor6) => {
+                  var img_2 = root_11$4();
+                  template_effect(() => set_attribute(img_2, "src", get(arts)[get(arts).length - 1]));
+                  append($$anchor6, img_2);
+                };
+                if_block(node_8, ($$render) => {
+                  if (get(arts)[i]) $$render(consequent_4);
+                  else if (get(arts)[get(arts).length - 1]) $$render(consequent_5, 1);
+                });
+              }
+              append($$anchor5, div_8);
+            });
+            append($$anchor4, div_7);
+          };
+          if_block(node_6, ($$render) => {
+            if (get(arts).length === 0) $$render(consequent_2);
+            else if (get(arts).length === 1) $$render(consequent_3, 1);
+            else $$render(alternate, -1);
+          });
+        }
+        var div_9 = sibling(node_6, 2);
+        var node_9 = child(div_9);
+        Icon(node_9, { name: "chevron-right", size: 22 });
+        var p_1 = sibling(div_5, 2);
+        var text_1 = child(p_1);
+        var p_2 = sibling(p_1, 2);
+        var text_2 = child(p_2);
+        template_effect(() => {
+          set_text(text_1, get(item).name);
+          set_text(text_2, `${get(item).songCount ?? ""} songs`);
+        });
+        delegated("click", button_3, () => enter(get(item)));
+        append($$anchor3, button_3);
+      });
+      append($$anchor2, fragment_1);
+    };
+    if_block(node_4, ($$render) => {
+      if (get(subFolders).length > 0) $$render(consequent_6);
+    });
+  }
+  var node_10 = sibling(node_4, 2);
+  {
+    var consequent_10 = ($$anchor2) => {
+      var fragment_2 = root_12$3();
+      var node_11 = first_child(fragment_2);
+      {
+        var consequent_7 = ($$anchor3) => {
+          var p_3 = root_13$4();
+          append($$anchor3, p_3);
+        };
+        if_block(node_11, ($$render) => {
+          if (get(subFolders).length > 0) $$render(consequent_7);
+        });
+      }
+      var table = sibling(node_11, 2);
+      var thead = child(table);
+      var tr = child(thead);
+      var th = sibling(child(tr), 3);
+      var node_12 = child(th);
+      Icon(node_12, { name: "queue", size: 13 });
+      var tbody = sibling(thead);
+      each(tbody, 21, () => get(directSongs), index, ($$anchor3, song, i) => {
+        const isActive = /* @__PURE__ */ user_derived(() => player.currentSong?.id === get(song).id);
+        var tr_1 = root_14$4();
+        let classes_2;
+        var td = child(tr_1);
+        var node_13 = child(td);
+        {
+          var consequent_8 = ($$anchor4) => {
+            var button_4 = root_15$2();
+            delegated("click", button_4, () => player.togglePlay());
+            append($$anchor4, button_4);
+          };
+          var consequent_9 = ($$anchor4) => {
+            var button_5 = root_16$2();
+            var node_14 = child(button_5);
+            Icon(node_14, { name: "play", size: 13 });
+            delegated("click", button_5, () => playSong(get(song), get(directSongs)));
+            append($$anchor4, button_5);
+          };
+          var alternate_1 = ($$anchor4) => {
+            var span_1 = root_17();
+            span_1.textContent = i + 1;
+            append($$anchor4, span_1);
+          };
+          if_block(node_13, ($$render) => {
+            if (get(isActive) && player.isPlaying) $$render(consequent_8);
+            else if (get(hoveredRowId) === get(song).id) $$render(consequent_9, 1);
+            else $$render(alternate_1, -1);
+          });
+        }
+        var td_1 = sibling(td);
+        var div_10 = child(td_1);
+        var span_2 = child(div_10);
+        let classes_3;
+        var text_3 = child(span_2);
+        var span_3 = sibling(span_2, 2);
+        var text_4 = child(span_3);
+        var td_2 = sibling(td_1);
+        var text_5 = child(td_2);
+        var td_3 = sibling(td_2);
+        var text_6 = child(td_3);
+        template_effect(
+          ($0) => {
+            classes_2 = set_class(tr_1, 1, "song-row svelte-1om5j5s", null, classes_2, { active: get(isActive) });
+            classes_3 = set_class(span_2, 1, "song-name svelte-1om5j5s", null, classes_3, { "active-name": get(isActive) });
+            set_text(text_3, get(song).title);
+            set_text(text_4, get(song).album);
+            set_text(text_5, get(song).artist);
+            set_text(text_6, $0);
+          },
+          [() => formatDuration(get(song).duration)]
+        );
+        event("mouseenter", tr_1, () => set(hoveredRowId, get(song).id, true));
+        event("mouseleave", tr_1, () => set(hoveredRowId, null));
+        delegated("dblclick", tr_1, () => playSong(get(song), get(directSongs)));
+        append($$anchor3, tr_1);
+      });
+      append($$anchor2, fragment_2);
+    };
+    if_block(node_10, ($$render) => {
+      if (get(currentLevel) && get(directSongs).length > 0) $$render(consequent_10);
+    });
+  }
+  var node_15 = sibling(node_10, 2);
+  {
+    var consequent_11 = ($$anchor2) => {
+      var div_11 = root_18();
+      var node_16 = child(div_11);
+      Icon(node_16, { name: "folder", size: 48 });
+      append($$anchor2, div_11);
+    };
+    if_block(node_15, ($$render) => {
+      if (!get(currentLevel) && library.folders.length === 0) $$render(consequent_11);
+    });
+  }
+  template_effect(() => classes = set_class(button, 1, "crumb svelte-1om5j5s", null, classes, { active: get(stack).length === 0 }));
+  delegated("click", button, goRoot);
+  append($$anchor, div);
+  pop();
+}
+delegate(["click", "dblclick"]);
 var root_1$5 = /* @__PURE__ */ from_html(`<div class="bar svelte-xn7gob"></div>`);
 var root_3$5 = /* @__PURE__ */ from_html(`<img alt="" class="album-art svelte-xn7gob"/>`);
 var root_4$4 = /* @__PURE__ */ from_html(`<div class="album-art placeholder svelte-xn7gob"><!></div>`);
@@ -7400,49 +7724,53 @@ function App($$anchor, $$props) {
       LibraryView($$anchor2, {});
     };
     var consequent_1 = ($$anchor2) => {
-      FoldersView($$anchor2, {});
+      FolderTreeView($$anchor2, {});
     };
     var consequent_2 = ($$anchor2) => {
-      PlayerView($$anchor2, {});
+      FoldersView($$anchor2, {});
     };
     var consequent_3 = ($$anchor2) => {
-      LikedSongsView($$anchor2, {});
+      PlayerView($$anchor2, {});
     };
     var consequent_4 = ($$anchor2) => {
-      AlbumsView($$anchor2, {});
+      LikedSongsView($$anchor2, {});
     };
     var consequent_5 = ($$anchor2) => {
-      ArtistsView($$anchor2, {});
+      AlbumsView($$anchor2, {});
     };
     var consequent_6 = ($$anchor2) => {
+      ArtistsView($$anchor2, {});
+    };
+    var consequent_7 = ($$anchor2) => {
       PlaylistView($$anchor2, {});
     };
     if_block(node_1, ($$render) => {
       if (ui.currentView === "library") $$render(consequent);
-      else if (ui.currentView === "folders") $$render(consequent_1, 1);
-      else if (ui.currentView === "player") $$render(consequent_2, 2);
-      else if (ui.currentView === "liked") $$render(consequent_3, 3);
-      else if (ui.currentView === "albums") $$render(consequent_4, 4);
-      else if (ui.currentView === "artists") $$render(consequent_5, 5);
-      else if (ui.currentView === "playlist") $$render(consequent_6, 6);
+      else if (ui.currentView === "folder-tree") $$render(consequent_1, 1);
+      else if (ui.currentView === "folders") $$render(consequent_2, 2);
+      else if (ui.currentView === "player") $$render(consequent_3, 3);
+      else if (ui.currentView === "liked") $$render(consequent_4, 4);
+      else if (ui.currentView === "albums") $$render(consequent_5, 5);
+      else if (ui.currentView === "artists") $$render(consequent_6, 6);
+      else if (ui.currentView === "playlist") $$render(consequent_7, 7);
     });
   }
   var node_2 = sibling(main, 2);
   {
-    var consequent_7 = ($$anchor2) => {
+    var consequent_8 = ($$anchor2) => {
       QueueSidebar($$anchor2, {});
     };
     if_block(node_2, ($$render) => {
-      if (ui.showQueue) $$render(consequent_7);
+      if (ui.showQueue) $$render(consequent_8);
     });
   }
   var node_3 = sibling(div_1, 2);
   {
-    var consequent_8 = ($$anchor2) => {
+    var consequent_9 = ($$anchor2) => {
       BottomBar($$anchor2, {});
     };
     if_block(node_3, ($$render) => {
-      if (ui.currentView !== "player") $$render(consequent_8);
+      if (ui.currentView !== "player") $$render(consequent_9);
     });
   }
   append($$anchor, div);

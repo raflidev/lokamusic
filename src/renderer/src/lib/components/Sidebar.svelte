@@ -8,6 +8,7 @@
 
   const navItems: { view: View; icon: string; label: string }[] = [
     { view: 'library', icon: 'library', label: 'Library' },
+    { view: 'folder-tree', icon: 'hierarchy', label: 'Folders Hierarchy' },
     { view: 'folders', icon: 'folder', label: 'Folders' },
     { view: 'player', icon: 'headphones', label: 'Player' }
   ]
@@ -75,14 +76,14 @@
       {#each library.folders as folder}
         <button
           class="nav-item folder-item"
-          class:active={ui.selectedFolderId === folder.id}
+          class:active={ui.currentView === 'library' && ui.selectedFolderId === folder.id}
           onclick={() => ui.navigateToFolder(folder.id)}
-          title={folder.path}
+          title={folder.name}
         >
           <FolderArt folderId={folder.id} size={28} />
           <div class="folder-item-meta">
             <span class="folder-item-name">{folder.name}</span>
-            <span class="folder-item-count">{folder.songCount} tracks</span>
+            <span class="folder-item-count">{folder.songCount} songs</span>
           </div>
         </button>
       {/each}

@@ -28,13 +28,6 @@
     if (folder) library.addFolder(folder)
   }
 
-  async function importFiles() {
-    const paths = await window.electronAPI.invoke('dialog:select-files') as string[]
-    if (paths.length) {
-      await window.electronAPI.invoke('library:import-files', paths)
-    }
-  }
-
   async function rescanFolder(id: string) {
     await window.electronAPI.invoke('library:scan-folder', id)
   }
@@ -73,10 +66,6 @@
           Scan New Folder <Icon name="arrow-right" size={16} />
         </button>
         <div class="secondary-actions">
-          <button class="secondary-btn" onclick={importFiles}>
-            <Icon name="import" size={20} />
-            <span>Import Files</span>
-          </button>
           <button class="secondary-btn disabled" disabled>
             <Icon name="cloud" size={20} />
             <span>Sync Cloud</span>
@@ -113,7 +102,7 @@
 
       <div class="folders-grid">
         {#each library.folders as folder}
-          <div class="folder-card">
+          <div class="folder-card" onclick={() => ui.navigateToFolder(folder.id)} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && ui.navigateToFolder(folder.id)}>
             <div class="folder-art-wrap">
               <FolderArt folderId={folder.id} size={130} />
               <span class="folder-badge">LOCAL DRIVE</span>
@@ -123,10 +112,10 @@
               <p class="folder-meta">{formatBytes(folder.sizeBytes)} · {folder.songCount} Tracks</p>
             </div>
             <div class="folder-actions">
-              <button class="icon-action" onclick={() => rescanFolder(folder.id)} title="Rescan">
+              <button class="icon-action" onclick={(e) => { e.stopPropagation(); rescanFolder(folder.id) }} title="Rescan">
                 <Icon name="refresh" size={14} />
               </button>
-              <button class="icon-action danger" onclick={() => folderToRemove = folder} title="Remove">
+              <button class="icon-action danger" onclick={(e) => { e.stopPropagation(); folderToRemove = folder }} title="Remove">
                 <Icon name="trash" size={14} />
               </button>
             </div>
@@ -309,8 +298,7 @@
   .scan-btn:hover { background: var(--tertiary); }
 
   .secondary-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
     gap: 8px;
   }
 
@@ -419,6 +407,7 @@
     overflow: hidden;
     transition: border-color 0.12s;
     text-align: left;
+    cursor: pointer;
   }
 
   .folder-card:hover { border-color: var(--outline); }
