@@ -47,6 +47,7 @@ interface Schema {
     volume: number
     shuffle: boolean
     repeat: 'none' | 'one' | 'all'
+    discordPresence: boolean
   }
 }
 
@@ -56,7 +57,7 @@ const store = new Store<Schema>({
     folders: [],
     scanHistory: [],
     playlists: [],
-    settings: { volume: 0.8, shuffle: false, repeat: 'none' }
+    settings: { volume: 0.8, shuffle: false, repeat: 'none', discordPresence: true }
   }
 })
 

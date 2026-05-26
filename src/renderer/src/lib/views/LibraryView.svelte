@@ -210,7 +210,6 @@
       />
     </div>
     <div class="topbar-actions">
-      <button class="icon-btn" title="Settings"><Icon name="settings" size={18} /></button>
     </div>
   </div>
 

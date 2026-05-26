@@ -1,4 +1,4 @@
-export type View = 'library' | 'folders' | 'folder-tree' | 'player' | 'liked' | 'albums' | 'artists' | 'playlist'
+export type View = 'library' | 'folders' | 'folder-tree' | 'player' | 'liked' | 'albums' | 'artists' | 'playlist' | 'settings'
 
 export interface ScanProgress {
   folderId: string

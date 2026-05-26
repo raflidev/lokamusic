@@ -11,6 +11,7 @@ let duration = $state(0)
 let volume = $state(0.8)
 let shuffle = $state(false)
 let repeat = $state<'none' | 'one' | 'all'>('none')
+let originalQueue = $state<Song[]>([])
 
 let audio: HTMLAudioElement | null = null
 
@@ -41,11 +42,11 @@ export const player = {
 
   playSong(song: Song, songList?: Song[]) {
     if (songList) {
+      originalQueue = songList
       if (shuffle) {
-        const shuffled = [...songList].sort(() => Math.random() - 0.5)
-        const idx = shuffled.findIndex(s => s.id === song.id)
-        queue = shuffled
-        queueIndex = idx >= 0 ? idx : 0
+        const others = songList.filter(s => s.id !== song.id).sort(() => Math.random() - 0.5)
+        queue = [song, ...others]
+        queueIndex = 0
       } else {
         const idx = songList.findIndex(s => s.id === song.id)
         queue = songList
@@ -123,7 +124,20 @@ export const player = {
     getAudio().volume = v
   },
 
-  toggleShuffle() { shuffle = !shuffle },
+  toggleShuffle() {
+    shuffle = !shuffle
+    if (!currentSong || queue.length === 0) return
+    if (shuffle) {
+      const others = queue.filter(s => s.id !== currentSong!.id).sort(() => Math.random() - 0.5)
+      queue = [currentSong!, ...others]
+      queueIndex = 0
+    } else {
+      const src = originalQueue.length > 0 ? originalQueue : queue
+      const idx = src.findIndex(s => s.id === currentSong!.id)
+      queue = src
+      queueIndex = idx >= 0 ? idx : 0
+    }
+  },
   toggleRepeat() {
     repeat = repeat === 'none' ? 'all' : repeat === 'all' ? 'one' : 'none'
   },
@@ -136,12 +150,27 @@ export const player = {
 }
 
 $effect.root(() => {
+  let pauseTimer: ReturnType<typeof setTimeout> | null = null
+
   $effect(() => {
     const song = currentSong
     const playing = isPlaying
 
+    if (pauseTimer) {
+      clearTimeout(pauseTimer)
+      pauseTimer = null
+    }
+
     if (!song) {
       window.electronAPI.invoke('discord:update-presence', null)
+      return
+    }
+
+    if (!playing) {
+      pauseTimer = setTimeout(() => {
+        window.electronAPI.invoke('discord:update-presence', null)
+        pauseTimer = null
+      }, 5000)
       return
     }
 
@@ -152,7 +181,7 @@ $effect.root(() => {
       title: song.title,
       artist: song.artist,
       album: song.album,
-      isPlaying: playing,
+      isPlaying: true,
       duration: dur,
       currentTime: ct,
     })

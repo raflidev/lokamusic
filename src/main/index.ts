@@ -19,6 +19,8 @@ let rpcReady = false
 rpc.on('ready', () => { rpcReady = true })
 rpc.login({ clientId: DISCORD_CLIENT_ID }).catch(() => {})
 
+let discordPresenceEnabled = true
+
 let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
@@ -209,6 +211,15 @@ function registerIpcHandlers(): void {
     store.set('playlists', playlists)
   })
 
+  ipcMain.handle('settings:get', () => store.get('settings'))
+
+  ipcMain.handle('settings:set-discord-presence', (_e, enabled: boolean) => {
+    discordPresenceEnabled = enabled
+    const settings = store.get('settings')
+    store.set('settings', { ...settings, discordPresence: enabled })
+    if (!enabled && rpcReady) rpc.clearActivity().catch(() => {})
+  })
+
   interface DiscordPresencePayload {
     title: string
     artist: string
@@ -237,16 +248,16 @@ function registerIpcHandlers(): void {
   }
 
   ipcMain.handle('discord:update-presence', async (_e, payload: DiscordPresencePayload | null) => {
-    if (!rpcReady) return
+    if (!rpcReady || !discordPresenceEnabled) return
 
     if (!payload) {
       rpc.clearActivity().catch(() => {})
       return
     }
 
-    const { title, artist, album, isPlaying, duration, currentTime } = payload
-    const endTimestamp = isPlaying
-      ? new Date(Date.now() + (duration - currentTime) * 1000)
+    const { title, artist, album, isPlaying, currentTime } = payload
+    const startTimestamp = isPlaying
+      ? new Date(Date.now() - currentTime * 1000)
       : undefined
 
     const artworkUrl = await fetchArtworkUrl(artist, album)
@@ -259,7 +270,7 @@ function registerIpcHandlers(): void {
       largeImageText: album,
       smallImageKey: isPlaying ? 'playing' : 'paused',
       smallImageText: isPlaying ? 'Playing' : 'Paused',
-      endTimestamp,
+      startTimestamp,
       instance: false,
     }).catch(() => {})
   })
@@ -326,6 +337,7 @@ function purgeOrphanSongs(): void {
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.lokamusic')
   purgeOrphanSongs()
+  discordPresenceEnabled = store.get('settings').discordPresence ?? true
 
   // Set Dock Icon on macOS
   let iconPath = join(__dirname, '../../public/logo.png')

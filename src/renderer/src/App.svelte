@@ -10,9 +10,11 @@
   import AlbumsView from './lib/views/AlbumsView.svelte'
   import ArtistsView from './lib/views/ArtistsView.svelte'
   import PlaylistView from './lib/views/PlaylistView.svelte'
+  import SettingsView from './lib/views/SettingsView.svelte'
   import QueueSidebar from './lib/components/QueueSidebar.svelte'
   import { library } from './lib/stores/library.svelte'
   import { ui } from './lib/stores/ui.svelte'
+  import { player } from './lib/stores/player.svelte'
   import { playlistStore } from './lib/stores/playlists.svelte'
   import type { Song, WatchedFolder, ScanEvent, Playlist } from '../../../preload/index.d'
 
@@ -29,6 +31,14 @@
   function onSongsUpdated(...args: unknown[]) {
     const songs = args[0] as Song[]
     library.setSongs(songs ?? [])
+  }
+
+  function onKeyDown(e: KeyboardEvent) {
+    if (e.code !== 'Space') return
+    const tag = (e.target as HTMLElement).tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return
+    e.preventDefault()
+    if (player.currentSong) player.togglePlay()
   }
 
   onMount(async () => {
@@ -53,6 +63,8 @@
   })
 </script>
 
+<svelte:window onkeydown={onKeyDown} />
+
 <div class="app-shell">
   <div class="main-area">
     <Sidebar />
@@ -73,6 +85,8 @@
         <ArtistsView />
       {:else if ui.currentView === 'playlist'}
         <PlaylistView />
+      {:else if ui.currentView === 'settings'}
+        <SettingsView />
       {/if}
     </main>
     {#if ui.showQueue}
