@@ -45,7 +45,7 @@
       <p class="label-sm">App</p>
       <div class="app-row">
         <span class="app-name">lokamusic</span>
-        <span class="app-stack">Electron · Svelte 5 · TypeScript</span>
+        <span class="app-stack">Tauri · Svelte 5 · TypeScript</span>
       </div>
     </div>
   </div>

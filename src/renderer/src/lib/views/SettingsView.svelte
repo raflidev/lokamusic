@@ -1,14 +1,25 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { relaunch } from '@tauri-apps/plugin-process'
+  import { getVersion } from '@tauri-apps/api/app'
+  import type { Update } from '@tauri-apps/plugin-updater'
   import { player } from '../stores/player.svelte'
   import { api } from '../api'
 
+  let { update = null }: { update: Update | null } = $props()
+
   let discordPresence = $state(true)
   let toggling = $state(false)
+  let appVersion = $state('')
+  let installing = $state(false)
 
   onMount(async () => {
-    const settings = await api.invoke('settings:get') as { discordPresence: boolean }
+    const [settings, version] = await Promise.all([
+      api.invoke('settings:get') as Promise<{ discordPresence: boolean }>,
+      getVersion(),
+    ])
     discordPresence = settings.discordPresence ?? true
+    appVersion = version
   })
 
   async function toggleDiscord() {
@@ -34,11 +45,50 @@
       toggling = false
     })
   }
+
+  async function installUpdate() {
+    if (!update || installing) return
+    installing = true
+    try {
+      await update.downloadAndInstall()
+      await relaunch()
+    } catch {
+      installing = false
+    }
+  }
 </script>
 
 <div class="settings-view">
   <div class="header">
     <h1>Settings</h1>
+  </div>
+
+  <div class="section">
+    <p class="section-title">Updates</p>
+
+    <div class="setting-row" class:loading={installing}>
+      <div class="setting-info">
+        {#if installing}
+          <span class="setting-label">Mengunduh update…</span>
+          <span class="setting-desc">App akan restart otomatis setelah selesai</span>
+        {:else if update}
+          <span class="setting-label">Update tersedia: <strong>v{update.version}</strong></span>
+          <span class="setting-desc">Versi saat ini: v{appVersion}</span>
+        {:else}
+          <span class="setting-label">lokamusic is up to date</span>
+          <span class="setting-desc">{appVersion ? `v${appVersion}` : ''}</span>
+        {/if}
+      </div>
+      {#if installing}
+        <span class="spinner" aria-label="Installing…"></span>
+      {:else if update}
+        <button class="install-btn" onclick={installUpdate}>
+          Install
+        </button>
+      {:else}
+        <span class="up-to-date-icon">✓</span>
+      {/if}
+    </div>
   </div>
 
   <div class="section">
@@ -186,5 +236,30 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+
+  .install-btn {
+    flex-shrink: 0;
+    padding: 7px 16px;
+    border-radius: var(--radius-lg);
+    background: var(--primary);
+    color: var(--on-primary);
+    font-size: 13px;
+    font-weight: 500;
+    transition: opacity 0.15s;
+  }
+
+  .install-btn:hover { opacity: 0.85; }
+
+  .up-to-date-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-size: 16px;
+    font-weight: 600;
   }
 </style>

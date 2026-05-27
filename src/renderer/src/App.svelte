@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
+  import { check, type Update } from '@tauri-apps/plugin-updater'
   import Sidebar from './lib/components/Sidebar.svelte'
   import BottomBar from './lib/components/BottomBar.svelte'
   import LibraryView from './lib/views/LibraryView.svelte'
@@ -18,6 +19,8 @@
   import { playlistStore } from './lib/stores/playlists.svelte'
   import { api } from './lib/api'
   import type { Song, WatchedFolder, Playlist } from './types'
+
+  let pendingUpdate = $state<Update | null>(null)
 
   function onScanProgress(progress: { folderId: string; scanned: number; total: number; percent: number }) {
     ui.setScanProgress(progress)
@@ -52,6 +55,8 @@
     await api.on('library:scan-progress', onScanProgress as (...args: unknown[]) => void)
     await api.on('library:scan-complete', onScanComplete as (...args: unknown[]) => void)
     await api.on('library:songs-updated', onSongsUpdated as (...args: unknown[]) => void)
+
+    check().then(update => { pendingUpdate = update ?? null }).catch(() => {})
   })
 
   onDestroy(() => {
@@ -84,7 +89,7 @@
       {:else if ui.currentView === 'playlist'}
         <PlaylistView />
       {:else if ui.currentView === 'settings'}
-        <SettingsView />
+        <SettingsView update={pendingUpdate} />
       {/if}
     </main>
     {#if ui.showQueue}

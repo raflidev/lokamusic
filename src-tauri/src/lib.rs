@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
-use discord_rich_presence::{activity, DiscordIpc, DiscordIpcClient};
+use discord_rich_presence::{activity, activity::ActivityType, DiscordIpc, DiscordIpcClient};
 use urlencoding::encode as url_encode;
 use serde_json::json;
 use tauri::Emitter;
@@ -51,6 +51,7 @@ impl DiscordState {
                 .small_image("lokamusic_logo");
 
             let mut act = activity::Activity::new()
+                .activity_type(ActivityType::Listening)
                 .details(details)
                 .state(state_str)
                 .assets(assets);
@@ -605,6 +606,8 @@ fn ensure_store_defaults(app: &tauri::AppHandle) {
 pub fn run() {
     tauri::Builder::default()
         .manage(Arc::new(Mutex::new(DiscordState::new())))
+        .plugin(tauri_plugin_updater::Builder::default().build())
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_log::Builder::default().level(log::LevelFilter::Info).build())
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
