@@ -8,7 +8,7 @@ use std::time::SystemTime;
 use discord_rich_presence::{activity, activity::ActivityType, DiscordIpc, DiscordIpcClient};
 use urlencoding::encode as url_encode;
 use serde_json::json;
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use tauri_plugin_store::StoreExt;
 use types::*;
 
@@ -431,6 +431,38 @@ fn playlist_remove_song(playlist_id: String, song_id: String, app: tauri::AppHan
 }
 
 #[tauri::command]
+fn open_miniplayer(app: tauri::AppHandle) -> Result<(), String> {
+    use tauri::{WebviewWindowBuilder, WebviewUrl};
+
+    if let Some(w) = app.get_webview_window("miniplayer") {
+        let _ = w.show();
+        let _ = w.set_focus();
+        return Ok(());
+    }
+
+    WebviewWindowBuilder::new(&app, "miniplayer", WebviewUrl::App("index.html".into()))
+        .title("lokamusic")
+        .inner_size(320.0, 380.0)
+        .resizable(true)
+        .min_inner_size(240.0, 330.0)
+        .decorations(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .visible_on_all_workspaces(true)
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
+#[tauri::command]
+fn close_miniplayer(app: tauri::AppHandle) {
+    if let Some(w) = app.get_webview_window("miniplayer") {
+        let _ = w.close();
+    }
+}
+
+#[tauri::command]
 fn settings_get(app: tauri::AppHandle) -> Settings {
     store_get_obj(&app, "settings")
 }
@@ -695,6 +727,8 @@ pub fn run() {
             settings_get,
             settings_set_discord_presence,
             discord_update_presence,
+            open_miniplayer,
+            close_miniplayer,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

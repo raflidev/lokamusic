@@ -19,10 +19,39 @@
   import { playlistStore } from './lib/stores/playlists.svelte'
   import { api } from './lib/api'
   import { trackEvent } from './lib/analytics'
+  import { listen, emit } from '@tauri-apps/api/event'
   import type { Song, WatchedFolder, Playlist } from './types'
+  import type { UnlistenFn } from '@tauri-apps/api/event'
 
   let pendingUpdate = $state<Update | null>(null)
   let prevVolume = $state(0.8)
+  let unlistenMpCmd: UnlistenFn | null = null
+  let unlistenMpReq: UnlistenFn | null = null
+
+  // Emit player state to the mini player window whenever it changes
+  $effect(() => {
+    const liked = player.currentSong
+      ? library.songs.find(s => s.id === player.currentSong!.id)?.liked ?? false
+      : false
+
+    emit('miniplayer:state', {
+      song: player.currentSong
+        ? {
+            id: player.currentSong.id,
+            title: player.currentSong.title,
+            artist: player.currentSong.artist,
+            albumArt: player.currentSong.albumArt,
+          }
+        : null,
+      isPlaying: player.isPlaying,
+      currentTime: player.currentTime,
+      duration: player.duration,
+      liked,
+      shuffle: player.shuffle,
+      repeat: player.repeat,
+      volume: player.volume,
+    }).catch(() => {})
+  })
 
   function onScanProgress(progress: { folderId: string; scanned: number; total: number; percent: number }) {
     ui.setScanProgress(progress)
@@ -126,6 +155,57 @@
     await api.on('library:scan-complete', onScanComplete as (...args: unknown[]) => void)
     await api.on('library:songs-updated', onSongsUpdated as (...args: unknown[]) => void)
 
+    type MpCmd = string | { action: 'seek'; value: number } | { action: 'set-volume'; value: number }
+    unlistenMpCmd = await listen<MpCmd>('miniplayer:cmd', (e) => {
+      const cmd = e.payload
+      if (typeof cmd === 'string') {
+        switch (cmd) {
+          case 'toggle-play': player.togglePlay(); break
+          case 'prev': player.prev(); break
+          case 'next': player.next(); break
+          case 'toggle-like':
+            if (player.currentSong) {
+              api.invoke('library:toggle-like', player.currentSong.id)
+              library.toggleLike(player.currentSong.id)
+            }
+            break
+          case 'toggle-shuffle': player.toggleShuffle(); break
+          case 'toggle-repeat': player.toggleRepeat(); break
+          case 'open-player': ui.navigate('player'); break
+        }
+      } else if (cmd && typeof cmd === 'object') {
+        if (cmd.action === 'seek') {
+          player.seek(cmd.value)
+        } else if (cmd.action === 'set-volume') {
+          player.setVolume(cmd.value)
+        }
+      }
+    })
+
+    // When mini player opens, it requests current state immediately
+    unlistenMpReq = await listen('miniplayer:request-state', () => {
+      const liked = player.currentSong
+        ? library.songs.find(s => s.id === player.currentSong!.id)?.liked ?? false
+        : false
+      emit('miniplayer:state', {
+        song: player.currentSong
+          ? {
+              id: player.currentSong.id,
+              title: player.currentSong.title,
+              artist: player.currentSong.artist,
+              albumArt: player.currentSong.albumArt,
+            }
+          : null,
+        isPlaying: player.isPlaying,
+        currentTime: player.currentTime,
+        duration: player.duration,
+        liked,
+        shuffle: player.shuffle,
+        repeat: player.repeat,
+        volume: player.volume,
+      }).catch(() => {})
+    })
+
     check().then(update => { pendingUpdate = update ?? null }).catch(() => {})
 
     trackEvent('app_opened')
@@ -135,6 +215,8 @@
     api.off('library:scan-progress', onScanProgress as (...args: unknown[]) => void)
     api.off('library:scan-complete', onScanComplete as (...args: unknown[]) => void)
     api.off('library:songs-updated', onSongsUpdated as (...args: unknown[]) => void)
+    unlistenMpCmd?.()
+    unlistenMpReq?.()
   })
 </script>
 

@@ -48,6 +48,7 @@
     'chevron-down': 'M6 9l6 6 6-6',
     pin: 'M12 22V15M5 8l2-7h10l2 7a5 5 0 0 1-5 5h-4a5 5 0 0 1-5-5z',
     x: 'M18 6L6 18M6 6l12 12',
+    miniplayer: 'M21 3H3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zM13 15h6v4h-6z',
   }
 
   const d = $derived(icons[name] ?? icons['music'])
