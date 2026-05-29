@@ -1989,7 +1989,7 @@ dependencies = [
 
 [[package]]
 name = "lokamusic"
-version = "1.0.5"
+version = "1.0.5-1"
 dependencies = [
  "base64 0.22.1",
  "discord-rich-presence",
