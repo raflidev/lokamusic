@@ -448,16 +448,19 @@ fn open_miniplayer(app: tauri::AppHandle) -> Result<(), String> {
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(&app, "miniplayer", WebviewUrl::App("index.html".into()))
+    let builder = WebviewWindowBuilder::new(&app, "miniplayer", WebviewUrl::App("index.html".into()))
         .title("lokamusic")
         .inner_size(320.0, 380.0)
         .resizable(true)
         .min_inner_size(240.0, 330.0)
         .decorations(false)
         .always_on_top(true)
-        .skip_taskbar(true)
-        .build()
-        .map_err(|e| e.to_string())?;
+        .skip_taskbar(true);
+
+    #[cfg(target_os = "macos")]
+    let builder = builder.visible_on_all_workspaces(true);
+
+    builder.build().map_err(|e| e.to_string())?;
 
     Ok(())
 }

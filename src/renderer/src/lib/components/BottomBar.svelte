@@ -19,6 +19,8 @@
     library.toggleLike(player.currentSong.id)
   }
 
+  const isMacOS = navigator.platform.toLowerCase().startsWith('mac')
+
   let isSeeking = $state(false)
   let seekValue = $state(0)
 
@@ -126,9 +128,11 @@
       <button class="ctrl-btn" class:active={ui.showQueue} onclick={() => ui.toggleQueue()} title="Queue">
         <Icon name="queue" size={15} />
       </button>
-      <button class="ctrl-btn" onclick={() => api.invoke('open-miniplayer')} title="Mini player">
-        <Icon name="miniplayer" size={15} />
-      </button>
+      {#if isMacOS}
+        <button class="ctrl-btn" onclick={() => api.invoke('open-miniplayer')} title="Mini player">
+          <Icon name="miniplayer" size={15} />
+        </button>
+      {/if}
     </div>
   </div>
 </div>
