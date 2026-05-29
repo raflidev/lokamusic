@@ -124,6 +124,21 @@ pub fn read_file_meta(file_path: &Path) -> Song {
     }
 }
 
+pub fn read_song_art(file_path: &Path) -> Option<String> {
+    let tagged_file = Probe::open(file_path).and_then(|p| p.read()).ok()?;
+    let tag = tagged_file.primary_tag().or_else(|| tagged_file.first_tag())?;
+    let cover = tag
+        .pictures()
+        .iter()
+        .find(|p| p.pic_type() == PictureType::CoverFront)
+        .or_else(|| tag.pictures().first())?;
+    if cover.data().len() > MAX_ART_BYTES {
+        return None;
+    }
+    let mime = cover.mime_type().map(|m| m.to_string()).unwrap_or_else(|| "image/jpeg".to_string());
+    Some(format!("data:{};base64,{}", mime, BASE64.encode(cover.data())))
+}
+
 pub fn get_folder_size(dir: &Path) -> u64 {
     WalkDir::new(dir)
         .follow_links(false)

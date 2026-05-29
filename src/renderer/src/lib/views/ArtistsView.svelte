@@ -5,10 +5,11 @@
   import { ui } from '../stores/ui.svelte'
   import type { Song } from '../../types'
   import { api } from '../api'
+  import { getArt } from '../stores/artCache.svelte'
 
   interface Artist {
     name: string
-    art?: string
+    artSongId?: string
     songs: Song[]
     albumCount: number
   }
@@ -24,7 +25,7 @@
     return [...map.entries()]
       .map(([name, { songs, albums }]) => ({
         name,
-        art: songs.find(s => s.albumArt)?.albumArt,
+        artSongId: songs[0]?.id,
         songs,
         albumCount: albums.size
       }))
@@ -61,8 +62,8 @@
         <Icon name="arrow-right" size={14} />
       </button>
       <div class="detail-avatar">
-        {#if selectedArtist.art}
-          <img src={selectedArtist.art} alt="" />
+        {#if getArt(selectedArtist.artSongId)}
+          <img src={getArt(selectedArtist.artSongId)} alt="" />
         {:else}
           <div class="avatar-placeholder"><Icon name="user" size={40} /></div>
         {/if}
@@ -146,8 +147,8 @@
         {#each artists as artist}
           <button class="artist-row" onclick={() => selectedArtist = artist}>
             <div class="artist-avatar">
-              {#if artist.art}
-                <img src={artist.art} alt="" />
+              {#if getArt(artist.artSongId)}
+                <img src={getArt(artist.artSongId)} alt="" />
               {:else}
                 <div class="avatar-placeholder"><Icon name="user" size={18} /></div>
               {/if}

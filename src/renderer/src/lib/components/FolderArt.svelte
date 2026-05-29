@@ -1,6 +1,7 @@
 <script lang="ts">
   import Icon from './Icon.svelte'
   import { library } from '../stores/library.svelte'
+  import { getArt } from '../stores/artCache.svelte'
 
   interface Props {
     folderId: string
@@ -9,38 +10,34 @@
 
   const { folderId, size = 28 }: Props = $props()
 
-  const arts = $derived.by(() => {
+  const artIds = $derived.by(() => {
     const folder = library.folders.find(f => f.id === folderId)
     if (!folder) return []
-    const seen = new Set<string>()
     const result: string[] = []
     for (const song of library.songs) {
-      if (!song.albumArt || !song.path.startsWith(folder.path)) continue
-      if (!seen.has(song.albumArt)) {
-        seen.add(song.albumArt)
-        result.push(song.albumArt)
-        if (result.length === 4) break
-      }
+      if (!song.path.startsWith(folder.path)) continue
+      result.push(song.id)
+      if (result.length === 4) break
     }
     return result
   })
 </script>
 
 <div class="folder-art" style="width:{size}px;height:{size}px">
-  {#if arts.length === 0}
+  {#if artIds.length === 0 || !getArt(artIds[0])}
     <div class="fallback">
       <Icon name="folder" size={size * 0.55} />
     </div>
-  {:else if arts.length === 1}
-    <img src={arts[0]} alt="" class="single" />
+  {:else if artIds.length === 1}
+    <img src={getArt(artIds[0])} alt="" class="single" />
   {:else}
     <div class="grid">
       {#each Array(4) as _, i}
         <div class="cell">
-          {#if arts[i]}
-            <img src={arts[i]} alt="" />
-          {:else if arts[arts.length - 1]}
-            <img src={arts[arts.length - 1]} alt="" />
+          {#if getArt(artIds[i])}
+            <img src={getArt(artIds[i])} alt="" />
+          {:else if getArt(artIds[artIds.length - 1])}
+            <img src={getArt(artIds[artIds.length - 1])} alt="" />
           {/if}
         </div>
       {/each}

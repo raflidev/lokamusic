@@ -163,6 +163,13 @@ async fn dialog_select_files(app: tauri::AppHandle) -> Result<Vec<String>, Strin
 }
 
 #[tauri::command]
+fn library_get_song_art(song_id: String, app: tauri::AppHandle) -> Option<String> {
+    let songs: Vec<Song> = store_get(&app, "songs");
+    let path = songs.iter().find(|s| s.id == song_id).map(|s| s.path.clone())?;
+    scanner::read_song_art(&PathBuf::from(&path))
+}
+
+#[tauri::command]
 fn library_get_all_songs(app: tauri::AppHandle) -> Vec<Song> {
     store_get(&app, "songs")
 }
@@ -258,6 +265,7 @@ async fn library_import_files(paths: Vec<String>, app: tauri::AppHandle) -> Resu
         }
     }
 
+    for s in &mut songs { s.album_art = None; }
     store_set(&app, "songs", &songs);
     app.emit("library:songs-updated", &songs).ok();
 
@@ -627,6 +635,7 @@ async fn run_scan(app: &tauri::AppHandle, folder_id: String, folder_path: String
     let mut merged = kept;
     merged.extend(updated);
 
+    for s in &mut merged { s.album_art = None; }
     store_set(app, "songs", &merged);
 
     let size_bytes = scanner::get_folder_size(&PathBuf::from(&folder_path));
@@ -709,6 +718,7 @@ pub fn run() {
             dialog_select_folder,
             dialog_select_files,
             library_get_all_songs,
+            library_get_song_art,
             library_get_folders,
             library_add_folder,
             library_remove_folder,

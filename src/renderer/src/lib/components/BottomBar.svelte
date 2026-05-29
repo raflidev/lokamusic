@@ -4,6 +4,7 @@
   import { library } from '../stores/library.svelte'
   import { ui } from '../stores/ui.svelte'
   import { api } from '../api'
+  import { getArt } from '../stores/artCache.svelte'
 
   function formatTime(s: number): string {
     if (!s || isNaN(s)) return '0:00'
@@ -41,8 +42,8 @@
     <!-- Track info -->
     <div class="track-info">
       <button class="album-art" onclick={() => player.currentSong && ui.navigate('player')}>
-        {#if player.currentSong?.albumArt}
-          <img src={player.currentSong.albumArt} alt="" />
+        {#if getArt(player.currentSong?.id)}
+          <img src={getArt(player.currentSong?.id)} alt="" />
         {:else}
           <div class="art-placeholder"><Icon name="music" size={18} /></div>
         {/if}

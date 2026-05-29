@@ -2,6 +2,7 @@
   import Icon from './Icon.svelte'
   import { player } from '../stores/player.svelte'
   import { ui } from '../stores/ui.svelte'
+  import { getArt } from '../stores/artCache.svelte'
 
   function formatDuration(s: number): string {
     if (!s) return '--'
@@ -22,8 +23,8 @@
       <p class="section-label">Now Playing</p>
       <div class="queue-item current">
         <div class="item-art">
-          {#if player.currentSong.albumArt}
-            <img src={player.currentSong.albumArt} alt="" />
+          {#if getArt(player.currentSong.id)}
+            <img src={getArt(player.currentSong.id)} alt="" />
           {:else}
             <div class="art-placeholder"><Icon name="music" size={12} /></div>
           {/if}
@@ -49,8 +50,8 @@
             <button class="queue-item" onclick={() => player.playAt(absIdx)}>
               <span class="item-num">{i + 1}</span>
               <div class="item-art">
-                {#if song.albumArt}
-                  <img src={song.albumArt} alt="" />
+                {#if getArt(song.id)}
+                  <img src={getArt(song.id)} alt="" />
                 {:else}
                   <div class="art-placeholder"><Icon name="music" size={12} /></div>
                 {/if}

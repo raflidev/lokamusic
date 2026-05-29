@@ -6,6 +6,7 @@
   import { playlistStore } from '../stores/playlists.svelte'
   import type { Song, Playlist } from '../../types'
   import { api } from '../api'
+  import { getArt } from '../stores/artCache.svelte'
 
   let searchQuery = $derived(ui.searchQuery)
   let hoveredRowId = $state<string | null>(null)
@@ -213,8 +214,8 @@
           {#each library.recentlyPlayed as song, i}
             <button class="strip-card" onclick={() => playSong(song)}>
               <div class="strip-art">
-                {#if song.albumArt}
-                  <img src={song.albumArt} alt="" />
+                {#if getArt(song.id)}
+                  <img src={getArt(song.id)} alt="" />
                 {:else}
                   <div class="strip-art-placeholder"><Icon name="music" size={28} /></div>
                 {/if}
@@ -335,8 +336,8 @@
                 <td class="col-title">
                   <div class="title-cell">
                     <div class="thumb">
-                      {#if song.albumArt}
-                        <img src={song.albumArt} alt="" />
+                      {#if getArt(song.id)}
+                        <img src={getArt(song.id)} alt="" />
                       {:else}
                         <Icon name="music" size={14} />
                       {/if}

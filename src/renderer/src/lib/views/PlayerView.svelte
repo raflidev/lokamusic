@@ -4,6 +4,7 @@
   import { library } from '../stores/library.svelte'
   import { ui } from '../stores/ui.svelte'
   import { api } from '../api'
+  import { getArt } from '../stores/artCache.svelte'
 
   function formatTime(s: number): string {
     if (!s || isNaN(s)) return '0:00'
@@ -132,8 +133,8 @@
           <!-- Front: Album art -->
           <div class="card-front">
             {#key player.currentSong?.id}
-              {#if player.currentSong?.albumArt}
-                <img src={player.currentSong.albumArt} alt="" class="album-art" />
+              {#if getArt(player.currentSong?.id)}
+                <img src={getArt(player.currentSong?.id)} alt="" class="album-art" />
               {:else}
                 <div class="album-art placeholder">
                   <Icon name="music" size={80} />

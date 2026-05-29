@@ -5,11 +5,12 @@
   import { ui } from '../stores/ui.svelte'
   import type { Song } from '../../types'
   import { api } from '../api'
+  import { getArt } from '../stores/artCache.svelte'
 
   interface Album {
     name: string
     artist: string
-    art?: string
+    artSongId?: string
     songs: Song[]
   }
 
@@ -18,10 +19,9 @@
     for (const song of library.songs) {
       const key = `${song.album}__${song.artist}`
       if (!map.has(key)) {
-        map.set(key, { name: song.album, artist: song.artist, art: song.albumArt, songs: [] })
+        map.set(key, { name: song.album, artist: song.artist, artSongId: song.id, songs: [] })
       }
       map.get(key)!.songs.push(song)
-      if (!map.get(key)!.art && song.albumArt) map.get(key)!.art = song.albumArt
     }
     return [...map.values()].sort((a, b) => a.name.localeCompare(b.name))
   })
@@ -57,8 +57,8 @@
         <Icon name="arrow-right" size={14} />
       </button>
       <div class="detail-art">
-        {#if selectedAlbum.art}
-          <img src={selectedAlbum.art} alt="" />
+        {#if getArt(selectedAlbum.artSongId)}
+          <img src={getArt(selectedAlbum.artSongId)} alt="" />
         {:else}
           <div class="detail-art-placeholder"><Icon name="music" size={36} /></div>
         {/if}
@@ -141,8 +141,8 @@
         {#each albums as album}
           <button class="album-card" onclick={() => selectedAlbum = album}>
             <div class="album-art">
-              {#if album.art}
-                <img src={album.art} alt="" />
+              {#if getArt(album.artSongId)}
+                <img src={getArt(album.artSongId)} alt="" />
               {:else}
                 <div class="art-placeholder"><Icon name="music" size={32} /></div>
               {/if}

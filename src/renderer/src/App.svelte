@@ -18,6 +18,7 @@
   import { player } from './lib/stores/player.svelte'
   import { playlistStore } from './lib/stores/playlists.svelte'
   import { api } from './lib/api'
+  import { getArt } from './lib/stores/artCache.svelte'
   import { trackEvent } from './lib/analytics'
   import { listen, emit } from '@tauri-apps/api/event'
   import type { Song, WatchedFolder, Playlist } from './types'
@@ -40,7 +41,7 @@
             id: player.currentSong.id,
             title: player.currentSong.title,
             artist: player.currentSong.artist,
-            albumArt: player.currentSong.albumArt,
+            albumArt: getArt(player.currentSong.id),
           }
         : null,
       isPlaying: player.isPlaying,
@@ -193,7 +194,7 @@
               id: player.currentSong.id,
               title: player.currentSong.title,
               artist: player.currentSong.artist,
-              albumArt: player.currentSong.albumArt,
+              albumArt: getArt(player.currentSong.id),
             }
           : null,
         isPlaying: player.isPlaying,

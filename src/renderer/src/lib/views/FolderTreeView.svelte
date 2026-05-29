@@ -4,6 +4,7 @@
   import { player } from '../stores/player.svelte'
   import type { Song, WatchedFolder } from '../../types'
   import { api } from '../api'
+  import { getArt } from '../stores/artCache.svelte'
 
   type Level = { name: string; path: string; folderId?: string }
 
@@ -51,17 +52,13 @@
     })
   })
 
-  function getArt(path: string): string[] {
+  function getFolderArtIds(path: string): string[] {
     const prefix = path + '/'
-    const seen = new Set<string>()
     const result: string[] = []
     for (const song of library.songs) {
-      if (!song.albumArt || !song.path.startsWith(prefix)) continue
-      if (!seen.has(song.albumArt)) {
-        seen.add(song.albumArt)
-        result.push(song.albumArt)
-        if (result.length === 4) break
-      }
+      if (!song.path.startsWith(prefix)) continue
+      result.push(song.id)
+      if (result.length === 4) break
     }
     return result
   }
@@ -124,21 +121,21 @@
       {/if}
       <div class="folders-grid">
         {#each subFolders as item}
-          {@const arts = getArt(item.path)}
+          {@const artIds = getFolderArtIds(item.path)}
           <button class="folder-card" onclick={() => enter(item)}>
             <div class="card-art">
-              {#if arts.length === 0}
+              {#if artIds.length === 0 || !getArt(artIds[0])}
                 <div class="art-placeholder"><Icon name="folder" size={36} /></div>
-              {:else if arts.length === 1}
-                <img src={arts[0]} alt="" class="art-single" />
+              {:else if artIds.length === 1}
+                <img src={getArt(artIds[0])} alt="" class="art-single" />
               {:else}
                 <div class="art-grid">
                   {#each Array(4) as _, i}
                     <div class="art-cell">
-                      {#if arts[i]}
-                        <img src={arts[i]} alt="" />
-                      {:else if arts[arts.length - 1]}
-                        <img src={arts[arts.length - 1]} alt="" />
+                      {#if getArt(artIds[i])}
+                        <img src={getArt(artIds[i])} alt="" />
+                      {:else if getArt(artIds[artIds.length - 1])}
+                        <img src={getArt(artIds[artIds.length - 1])} alt="" />
                       {/if}
                     </div>
                   {/each}
@@ -201,8 +198,8 @@
               <td class="col-title">
                 <div class="title-cell">
                   <div class="thumb">
-                    {#if song.albumArt}
-                      <img src={song.albumArt} alt="" />
+                    {#if getArt(song.id)}
+                      <img src={getArt(song.id)} alt="" />
                     {:else}
                       <Icon name="music" size={14} />
                     {/if}

@@ -4,6 +4,7 @@
   import { player } from '../stores/player.svelte'
   import type { Song } from '../../types'
   import { api } from '../api'
+  import { getArt } from '../stores/artCache.svelte'
 
   function formatDuration(s: number): string {
     if (!s) return '--'
@@ -66,8 +67,8 @@
               <td class="col-title">
                 <div class="title-cell">
                   <div class="thumb">
-                    {#if song.albumArt}
-                      <img src={song.albumArt} alt="" />
+                    {#if getArt(song.id)}
+                      <img src={getArt(song.id)} alt="" />
                     {:else}
                       <Icon name="music" size={14} />
                     {/if}
