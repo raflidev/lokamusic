@@ -456,7 +456,6 @@ fn open_miniplayer(app: tauri::AppHandle) -> Result<(), String> {
         .decorations(false)
         .always_on_top(true)
         .skip_taskbar(true)
-        .visible_on_all_workspaces(true)
         .build()
         .map_err(|e| e.to_string())?;
 
