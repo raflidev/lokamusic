@@ -29,7 +29,6 @@
   }
   let sortKey = $state<SortKey>('title')
   let sortDir = $state<SortDir>('asc')
-  let showSortDropdown = $state(false)
 
   // Filter state
   type FilterMode = 'all' | 'liked'
@@ -49,11 +48,8 @@
       sortKey = key
       sortDir = defaultDir[key]
     }
-    showSortDropdown = false
   }
 
-  const sortArrow = $derived(sortDir === 'asc' ? '↑' : '↓')
-  const sortLabel = $derived(`Sort: ${sortLabels[sortKey]} ${sortArrow}`)
   const filterLabel = $derived(filterMode === 'liked' ? 'Filter: Liked' : 'Filter')
 
   const activeFolder = $derived(
@@ -146,11 +142,6 @@
     closePlaylistMenu()
   }
 </script>
-
-<!-- Backdrop for sort dropdown -->
-{#if showSortDropdown}
-  <div class="backdrop" onclick={() => showSortDropdown = false}></div>
-{/if}
 
 <!-- Backdrop for filter dropdown -->
 {#if showFilterDropdown}
@@ -258,35 +249,12 @@
           {/if}
         </div>
         <div class="header-actions">
-          <!-- Sort dropdown -->
-          <div class="dropdown-wrap">
-            <button class="pill-btn" onclick={() => { showSortDropdown = !showSortDropdown; showFilterDropdown = false }}>
-              <Icon name="sort" size={13} /> {sortLabel}
-            </button>
-            {#if showSortDropdown}
-              <div class="dropdown">
-                {#each Object.entries(sortLabels) as [key, label]}
-                  <button
-                    class="dropdown-item"
-                    class:selected={sortKey === key}
-                    onclick={() => toggleSort(key as SortKey)}
-                  >
-                    {label}
-                    {#if sortKey === key}
-                      <span class="sort-dir-indicator">{sortArrow}</span>
-                    {/if}
-                  </button>
-                {/each}
-              </div>
-            {/if}
-          </div>
-
           <!-- Filter dropdown -->
           <div class="dropdown-wrap">
             <button
               class="pill-btn"
               class:active={filterMode !== 'all'}
-              onclick={() => { showFilterDropdown = !showFilterDropdown; showSortDropdown = false }}
+              onclick={() => { showFilterDropdown = !showFilterDropdown }}
             >
               <Icon name="filter" size={13} /> {filterLabel}
             </button>
@@ -320,10 +288,18 @@
           <thead>
             <tr>
               <th class="col-num">#</th>
-              <th class="col-title">Title</th>
-              <th class="col-album">Album</th>
-              <th class="col-date">Date Added</th>
-              <th class="col-duration"><Icon name="queue" size={13} /></th>
+              <th class="col-title sortable" class:sort-active={sortKey === 'title'} onclick={() => toggleSort('title')}>
+                Title {#if sortKey === 'title'}<span class="sort-ind">{sortDir === 'asc' ? '↑' : '↓'}</span>{/if}
+              </th>
+              <th class="col-album sortable" class:sort-active={sortKey === 'album'} onclick={() => toggleSort('album')}>
+                Album {#if sortKey === 'album'}<span class="sort-ind">{sortDir === 'asc' ? '↑' : '↓'}</span>{/if}
+              </th>
+              <th class="col-date sortable" class:sort-active={sortKey === 'dateAdded'} onclick={() => toggleSort('dateAdded')}>
+                Date Added {#if sortKey === 'dateAdded'}<span class="sort-ind">{sortDir === 'asc' ? '↑' : '↓'}</span>{/if}
+              </th>
+              <th class="col-duration sortable" class:sort-active={sortKey === 'duration'} onclick={() => toggleSort('duration')}>
+                <Icon name="queue" size={13} /> {#if sortKey === 'duration'}<span class="sort-ind">{sortDir === 'asc' ? '↑' : '↓'}</span>{/if}
+              </th>
               <th class="col-actions"></th>
             </tr>
           </thead>
@@ -663,11 +639,6 @@
     font-weight: 500;
   }
 
-  .sort-dir-indicator {
-    font-size: 12px;
-    color: var(--primary);
-  }
-
   /* Backdrop */
   .backdrop {
     position: fixed;
@@ -803,6 +774,15 @@
   .col-date { width: 140px; }
   .col-duration { width: 60px; text-align: right; }
   .col-actions { width: 40px; text-align: right; }
+
+  .sortable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  .sortable:hover { color: var(--on-surface); }
+  .sort-active { color: var(--primary); }
+  .sort-ind { margin-left: 3px; font-size: 10px; }
 
   .num-cell {
     width: 24px;

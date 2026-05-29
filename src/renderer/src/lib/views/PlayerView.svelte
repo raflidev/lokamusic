@@ -38,6 +38,33 @@
   const hasLyrics = $derived(!!player.currentSong?.lyrics)
   let showLyrics = $state(false)
   let lyricsFullscreen = $state(false)
+  let isFetchingLyrics = $state(false)
+  let lyricsError = $state<string | null>(null)
+
+  $effect(() => {
+    player.currentSong
+    lyricsError = null
+    isFetchingLyrics = false
+  })
+
+  async function fetchLyrics() {
+    if (!player.currentSong) return
+    const song = player.currentSong
+    const { id, title, artist, album, duration } = song
+    isFetchingLyrics = true
+    lyricsError = null
+    try {
+      const content = await api.invoke('library:fetch-lyrics', id, title, artist, album, duration) as string
+      if (player.currentSong?.id !== id) return
+      library.updateSong({ ...song, lyrics: content })
+      player.updateCurrentSongLyrics(content)
+    } catch (e) {
+      if (player.currentSong?.id !== id) return
+      lyricsError = typeof e === 'string' ? e : (e instanceof Error ? e.message : 'Failed to fetch')
+    } finally {
+      if (player.currentSong?.id === id) isFetchingLyrics = false
+    }
+  }
 
   interface LrcLine { time: number; text: string }
 
@@ -151,6 +178,14 @@
                 <div class="no-lyrics">
                   <Icon name="mic" size={32} />
                   <p>No lyrics available</p>
+                  {#if player.currentSong}
+                    <button class="fetch-lyrics-btn" onclick={fetchLyrics} disabled={isFetchingLyrics}>
+                      {isFetchingLyrics ? 'Fetching…' : 'Fetch Lyrics'}
+                    </button>
+                    {#if lyricsError}
+                      <p class="lyrics-error">{lyricsError}</p>
+                    {/if}
+                  {/if}
                 </div>
               {/if}
             </div>
@@ -484,6 +519,27 @@
     gap: 12px;
     color: var(--outline);
     font-size: 13px;
+  }
+
+  .fetch-lyrics-btn {
+    margin-top: 4px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: var(--primary);
+    color: var(--on-primary);
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .fetch-lyrics-btn:hover { opacity: 0.85; }
+  .fetch-lyrics-btn:disabled { opacity: 0.5; cursor: default; }
+
+  .lyrics-error {
+    font-size: 11px;
+    color: var(--error, #f38ba8);
+    margin-top: 2px;
   }
 
   .lyrics-text {

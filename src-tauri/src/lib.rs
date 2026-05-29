@@ -290,6 +290,63 @@ fn library_toggle_like(song_id: String, app: tauri::AppHandle) -> Result<bool, S
 }
 
 #[tauri::command]
+fn library_set_lyrics(song_id: String, lyrics: String, app: tauri::AppHandle) -> Result<(), String> {
+    let mut songs: Vec<Song> = store_get(&app, "songs");
+    for s in &mut songs {
+        if s.id == song_id {
+            s.lyrics = Some(lyrics);
+            break;
+        }
+    }
+    store_set(&app, "songs", &songs);
+    Ok(())
+}
+
+#[tauri::command]
+async fn library_fetch_lyrics(
+    song_id: String,
+    title: String,
+    artist: String,
+    album: String,
+    duration: f64,
+    app: tauri::AppHandle,
+) -> Result<String, String> {
+    let url = format!(
+        "https://lrclib.net/api/get?track_name={}&artist_name={}&album_name={}&duration={}",
+        url_encode(&title),
+        url_encode(&artist),
+        url_encode(&album),
+        duration.round() as i64,
+    );
+
+    let res = reqwest::get(&url).await.map_err(|e| e.to_string())?;
+    if res.status().as_u16() == 404 {
+        return Err("Lyrics not found".to_string());
+    }
+    if !res.status().is_success() {
+        return Err(format!("API error: {}", res.status()));
+    }
+
+    let data: serde_json::Value = res.json().await.map_err(|e| e.to_string())?;
+    let lyrics = data["syncedLyrics"]
+        .as_str()
+        .or_else(|| data["plainLyrics"].as_str())
+        .ok_or_else(|| "No lyrics available".to_string())?
+        .to_string();
+
+    let mut songs: Vec<Song> = store_get(&app, "songs");
+    for s in &mut songs {
+        if s.id == song_id {
+            s.lyrics = Some(lyrics.clone());
+            break;
+        }
+    }
+    store_set(&app, "songs", &songs);
+
+    Ok(lyrics)
+}
+
+#[tauri::command]
 fn library_update_play(song_id: String, app: tauri::AppHandle) -> Result<(), String> {
     let mut songs: Vec<Song> = store_get(&app, "songs");
     for s in &mut songs {
@@ -626,6 +683,8 @@ pub fn run() {
             library_scan_folder,
             library_import_files,
             library_toggle_like,
+            library_set_lyrics,
+            library_fetch_lyrics,
             library_update_play,
             playlist_get_all,
             playlist_create,

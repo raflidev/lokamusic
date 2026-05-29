@@ -18,9 +18,11 @@
   import { player } from './lib/stores/player.svelte'
   import { playlistStore } from './lib/stores/playlists.svelte'
   import { api } from './lib/api'
+  import { trackEvent } from './lib/analytics'
   import type { Song, WatchedFolder, Playlist } from './types'
 
   let pendingUpdate = $state<Update | null>(null)
+  let prevVolume = $state(0.8)
 
   function onScanProgress(progress: { folderId: string; scanned: number; total: number; percent: number }) {
     ui.setScanProgress(progress)
@@ -35,11 +37,79 @@
   }
 
   function onKeyDown(e: KeyboardEvent) {
-    if (e.code !== 'Space') return
     const tag = (e.target as HTMLElement).tagName
     if (tag === 'INPUT' || tag === 'TEXTAREA') return
-    e.preventDefault()
-    if (player.currentSong) player.togglePlay()
+
+    switch (e.code) {
+      case 'Space':
+        e.preventDefault()
+        if (player.currentSong) player.togglePlay()
+        break
+      case 'ArrowRight':
+        if (!player.currentSong) break
+        e.preventDefault()
+        player.seek(Math.min(player.currentTime + 5, player.duration))
+        break
+      case 'ArrowLeft':
+        if (!player.currentSong) break
+        e.preventDefault()
+        player.seek(Math.max(player.currentTime - 5, 0))
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        player.setVolume(Math.min(player.volume + 0.05, 1))
+        break
+      case 'ArrowDown':
+        e.preventDefault()
+        player.setVolume(Math.max(player.volume - 0.05, 0))
+        break
+      case 'KeyN':
+        if (!player.currentSong) break
+        e.preventDefault()
+        player.next()
+        break
+      case 'KeyP':
+        if (!player.currentSong) break
+        e.preventDefault()
+        player.prev()
+        break
+      case 'KeyL':
+        if (!player.currentSong) break
+        e.preventDefault()
+        api.invoke('library:toggle-like', player.currentSong.id)
+        library.toggleLike(player.currentSong.id)
+        break
+      case 'KeyS':
+        e.preventDefault()
+        player.toggleShuffle()
+        break
+      case 'KeyR':
+        e.preventDefault()
+        player.toggleRepeat()
+        break
+      case 'KeyQ':
+        e.preventDefault()
+        ui.toggleQueue()
+        break
+      case 'KeyM':
+        e.preventDefault()
+        if (player.volume > 0) {
+          prevVolume = player.volume
+          player.setVolume(0)
+        } else {
+          player.setVolume(prevVolume)
+        }
+        break
+      case 'MediaPlayPause':
+        if (player.currentSong) player.togglePlay()
+        break
+      case 'MediaTrackNext':
+        player.next()
+        break
+      case 'MediaTrackPrevious':
+        player.prev()
+        break
+    }
   }
 
   onMount(async () => {
@@ -57,6 +127,8 @@
     await api.on('library:songs-updated', onSongsUpdated as (...args: unknown[]) => void)
 
     check().then(update => { pendingUpdate = update ?? null }).catch(() => {})
+
+    trackEvent('app_opened')
   })
 
   onDestroy(() => {

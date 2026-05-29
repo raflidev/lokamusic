@@ -15,6 +15,8 @@ function mapArgs(channel: string, args: unknown[]): Record<string, unknown> {
     case 'library:scan-folder':   return { id: args[0] }
     case 'library:import-files':  return { paths: args[0] }
     case 'library:toggle-like':   return { song_id: args[0] }
+    case 'library:set-lyrics':    return { song_id: args[0], lyrics: args[1] }
+    case 'library:fetch-lyrics':  return { songId: args[0], title: args[1], artist: args[2], album: args[3], duration: args[4] }
     case 'library:update-play':   return { song_id: args[0] }
     case 'playlist:create':       return { name: args[0] }
     case 'playlist:delete':       return { id: args[0] }

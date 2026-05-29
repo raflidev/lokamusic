@@ -144,6 +144,10 @@ export const player = {
     repeat = repeat === 'none' ? 'all' : repeat === 'all' ? 'one' : 'none'
   },
 
+  updateCurrentSongLyrics(lyrics: string) {
+    if (currentSong) currentSong = { ...currentSong, lyrics }
+  },
+
   get upNext(): Song | null {
     if (queue.length === 0) return null
     const next = queueIndex + 1
