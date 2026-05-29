@@ -1,6 +1,6 @@
 [package]
 name = "lokamusic"
-version = "1.0.5-2"
+version = "1.0.5-3"
 description = "lokamusic - a music player"
 authors = ["Rafli Ramadhan"]
 license = ""
