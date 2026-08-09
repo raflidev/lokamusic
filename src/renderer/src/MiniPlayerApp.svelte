@@ -14,6 +14,7 @@
   interface PlayerState {
     song: MiniSong | null
     isPlaying: boolean
+    isLoading: boolean
     currentTime: number
     duration: number
     liked: boolean
@@ -25,6 +26,7 @@
   let ps = $state({
     song: null as MiniSong | null,
     isPlaying: false,
+    isLoading: false,
     currentTime: 0,
     duration: 1,
     liked: false,
@@ -56,6 +58,7 @@
       const d = e.payload
       ps.song = d.song
       ps.isPlaying = d.isPlaying
+      ps.isLoading = d.isLoading
       ps.currentTime = d.currentTime
       ps.duration = d.duration
       ps.liked = d.liked
@@ -103,7 +106,7 @@
     isSeeking = false
   }
 
-  // Volume bar drag — click sets position, drag adjusts
+  // Volume bar drag - click sets position, drag adjusts
   function startVolBarDrag(e: MouseEvent) {
     e.preventDefault()
     volDragging = true
@@ -157,7 +160,7 @@
       </div>
     {/if}
 
-    <!-- X button — always visible in top-right -->
+    <!-- X button - always visible in top-right -->
     <button class="close-fab" onclick={backToApp} title="Back to app">
       <Icon name="x" size={14} />
     </button>
@@ -188,13 +191,13 @@
               <Icon name={volIcon} size={15} />
             </div>
           </div>
-          <button class="ov-btn" onclick={() => sendCmd('prev')} title="Previous">
+          <button class="ov-btn" onclick={() => sendCmd('prev')} disabled={ps.isLoading} title="Previous">
             <Icon name="skip-back" size={18} />
           </button>
           <button class="play-circle" onclick={() => sendCmd('toggle-play')} title={ps.isPlaying ? 'Pause' : 'Play'}>
             <Icon name={ps.isPlaying ? 'pause' : 'play'} size={18} />
           </button>
-          <button class="ov-btn" onclick={() => sendCmd('next')} title="Next">
+          <button class="ov-btn" onclick={() => sendCmd('next')} disabled={ps.isLoading} title="Next">
             <Icon name="skip-forward" size={18} />
           </button>
           <button
@@ -359,6 +362,7 @@
 
   .ov-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.12); transform: scale(1.08); }
   .ov-btn.active { color: var(--secondary); }
+  .ov-btn:disabled { opacity: 0.4; cursor: default; pointer-events: none; transform: none; }
 
   .vol-wrap {
     position: relative;
@@ -371,7 +375,7 @@
   .vol-icon-btn { cursor: default; }
   .vol-icon-btn.dragging { color: var(--secondary); }
 
-  /* Vertical bar — floats above the icon */
+  /* Vertical bar - floats above the icon */
   .vol-bar-track {
     position: absolute;
     bottom: calc(100% + 2px);

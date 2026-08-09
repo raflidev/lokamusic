@@ -444,7 +444,7 @@
     margin-bottom: 16px;
   }
 
-  /* Recently Played — horizontal strip */
+  /* Recently Played - horizontal strip */
   .recently-played { margin-bottom: 32px; }
 
   .recent-strip {

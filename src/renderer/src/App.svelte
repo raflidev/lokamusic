@@ -41,10 +41,12 @@
             id: player.currentSong.id,
             title: player.currentSong.title,
             artist: player.currentSong.artist,
+            album: player.currentSong.album,
             albumArt: getArt(player.currentSong.id),
           }
         : null,
       isPlaying: player.isPlaying,
+      isLoading: player.isLoading,
       currentTime: player.currentTime,
       duration: player.duration,
       liked,
@@ -198,6 +200,7 @@
             }
           : null,
         isPlaying: player.isPlaying,
+      isLoading: player.isLoading,
         currentTime: player.currentTime,
         duration: player.duration,
         liked,

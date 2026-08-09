@@ -50,10 +50,10 @@ export const library = {
   },
 
   markPlayed(songId: string) {
-    songs = songs.map(s =>
-      s.id === songId
-        ? { ...s, playCount: s.playCount + 1, lastPlayed: Date.now() }
-        : s
-    )
+    const s = songs.find(s => s.id === songId)
+    if (s) {
+      s.playCount++
+      s.lastPlayed = Date.now()
+    }
   }
 }

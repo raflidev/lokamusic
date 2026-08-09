@@ -125,7 +125,7 @@
   </div>
 
   <div class="player-body" class:compact={ui.showQueue}>
-    <!-- Album art / Lyrics — card flip -->
+    <!-- Album art / Lyrics - card flip -->
     <div class="art-wrap">
       <div class="card-flip">
         <div class="card-flip-inner" class:flipped={showLyrics}>
@@ -238,7 +238,7 @@
 
         {#if player.currentSong}
           <h1 class="track-title">{player.currentSong.title}</h1>
-          <p class="track-meta">{player.currentSong.artist} — {player.currentSong.album}</p>
+          <p class="track-meta">{player.currentSong.artist} - {player.currentSong.album}</p>
         {:else}
           <h1 class="track-title muted">No track selected</h1>
           <p class="track-meta">Pick a song from your library</p>
@@ -387,7 +387,7 @@
     padding: 24px 32px;
   }
 
-  /* Album art / Lyrics — card flip */
+  /* Album art / Lyrics - card flip */
   .art-wrap {
     flex-shrink: 0;
     position: relative;

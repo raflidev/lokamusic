@@ -8,7 +8,12 @@ use std::time::SystemTime;
 use discord_rich_presence::{activity, activity::ActivityType, DiscordIpc, DiscordIpcClient};
 use urlencoding::encode as url_encode;
 use serde_json::json;
-use tauri::{Emitter, Manager};
+use tauri::{
+    image::Image,
+    menu::{IconMenuItem, Menu, MenuItem, PredefinedMenuItem},
+    tray::{TrayIcon, TrayIconBuilder},
+    Emitter, Manager,
+};
 use tauri_plugin_store::StoreExt;
 use types::*;
 
@@ -163,10 +168,11 @@ async fn dialog_select_files(app: tauri::AppHandle) -> Result<Vec<String>, Strin
 }
 
 #[tauri::command]
-fn library_get_song_art(song_id: String, app: tauri::AppHandle) -> Option<String> {
-    let songs: Vec<Song> = store_get(&app, "songs");
-    let path = songs.iter().find(|s| s.id == song_id).map(|s| s.path.clone())?;
-    scanner::read_song_art(&PathBuf::from(&path))
+async fn library_get_song_art(path: String) -> Option<String> {
+    tokio::task::spawn_blocking(move || scanner::read_song_art(&PathBuf::from(&path)))
+        .await
+        .ok()
+        .flatten()
 }
 
 #[tauri::command]
@@ -355,17 +361,20 @@ async fn library_fetch_lyrics(
 }
 
 #[tauri::command]
-fn library_update_play(song_id: String, app: tauri::AppHandle) -> Result<(), String> {
-    let mut songs: Vec<Song> = store_get(&app, "songs");
-    for s in &mut songs {
-        if s.id == song_id {
-            s.play_count += 1;
-            s.last_played = Some(now_ms());
-            break;
+async fn library_update_play(song_id: String, app: tauri::AppHandle) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || {
+        let mut songs: Vec<Song> = store_get(&app, "songs");
+        for s in &mut songs {
+            if s.id == song_id {
+                s.play_count += 1;
+                s.last_played = Some(now_ms());
+                break;
+            }
         }
-    }
-    store_set(&app, "songs", &songs);
-    Ok(())
+        store_set(&app, "songs", &songs);
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -472,6 +481,81 @@ fn close_miniplayer(app: tauri::AppHandle) {
     }
 }
 
+fn open_tray_popover(app: &tauri::AppHandle, rect: tauri::Rect) {
+    use tauri::{WebviewWindowBuilder, WebviewUrl};
+
+    const WIDTH: f64 = 300.0;
+    const HEIGHT: f64 = 190.0;
+
+    let scale = app.primary_monitor().ok().flatten().map(|m| m.scale_factor()).unwrap_or(1.0);
+    let icon_pos = rect.position.to_logical::<f64>(scale);
+    let icon_size = rect.size.to_logical::<f64>(scale);
+    let x = icon_pos.x + icon_size.width / 2.0 - WIDTH / 2.0;
+    let y = icon_pos.y + icon_size.height + 4.0;
+
+    let builder = WebviewWindowBuilder::new(app, "tray-popover", WebviewUrl::App("index.html".into()))
+        .title("lokamusic")
+        .inner_size(WIDTH, HEIGHT)
+        .resizable(false)
+        .decorations(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .position(x, y);
+
+    #[cfg(target_os = "macos")]
+    let builder = builder.visible_on_all_workspaces(true);
+
+    let _ = builder.build();
+}
+
+fn truncate(s: &str, max: usize) -> String {
+    if s.chars().count() > max {
+        format!("{}…", s.chars().take(max - 1).collect::<String>())
+    } else {
+        s.to_string()
+    }
+}
+
+fn decode_art(data_uri: &str) -> Option<Image<'static>> {
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    let b64 = data_uri.split(',').nth(1)?;
+    let bytes = STANDARD.decode(b64).ok()?;
+    Image::from_bytes(&bytes).ok().map(|i| i.to_owned())
+}
+
+#[tauri::command]
+fn tray_set_now_playing(
+    payload: Option<serde_json::Value>,
+    tray: tauri::State<TrayIcon>,
+    now_playing_item: tauri::State<IconMenuItem<tauri::Wry>>,
+) -> Result<(), String> {
+    let Some(p) = payload.filter(|p| !p["title"].as_str().unwrap_or("").is_empty()) else {
+        tray.set_title(None::<&str>).map_err(|e| e.to_string())?;
+        now_playing_item.set_text("Not Playing").map_err(|e| e.to_string())?;
+        now_playing_item.set_icon(None).map_err(|e| e.to_string())?;
+        return Ok(());
+    };
+
+    let title = p["title"].as_str().unwrap_or("Unknown").to_string();
+    let artist = p["artist"].as_str().unwrap_or("Unknown Artist").to_string();
+    let album = p["album"].as_str().unwrap_or("").to_string();
+    let playing = p["isPlaying"].as_bool().unwrap_or(false);
+    let art = p["art"].as_str().and_then(decode_art);
+
+    let status_line = format!("{} {} - {}", if playing { "♪" } else { "⏸" }, title, artist);
+    tray.set_title(Some(truncate(&status_line, 40))).map_err(|e| e.to_string())?;
+
+    let menu_text = if album.is_empty() {
+        format!("{}\n{}", title, artist)
+    } else {
+        format!("{}\n{} - {}", title, artist, album)
+    };
+    now_playing_item.set_text(menu_text).map_err(|e| e.to_string())?;
+    now_playing_item.set_icon(art).map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 #[tauri::command]
 fn settings_get(app: tauri::AppHandle) -> Settings {
     store_get_obj(&app, "settings")
@@ -545,7 +629,7 @@ async fn discord_update_presence(
             };
 
             DiscordAction::SetActivity {
-                state_str: format!("{} — {}", artist, album),
+                state_str: format!("{} - {}", artist, album),
                 start_ts: now - current_time as i64,
                 title,
                 artwork_url,
@@ -714,6 +798,51 @@ pub fn run() {
         .setup(|app| {
             ensure_store_defaults(app.handle());
             purge_orphan_songs(app.handle());
+
+            let now_playing_item = IconMenuItem::with_id(app, "now-playing", "Not Playing", false, None, None::<&str>)?;
+            let separator1 = PredefinedMenuItem::separator(app)?;
+            let prev_item = MenuItem::with_id(app, "prev", "⏮  Previous", true, None::<&str>)?;
+            let play_pause_item = MenuItem::with_id(app, "play-pause", "⏯  Play / Pause", true, None::<&str>)?;
+            let next_item = MenuItem::with_id(app, "next", "⏭  Next", true, None::<&str>)?;
+            let separator2 = PredefinedMenuItem::separator(app)?;
+            let quit_item = MenuItem::with_id(app, "quit", "Quit lokamusic", true, None::<&str>)?;
+            let tray_menu = Menu::with_items(
+                app,
+                &[&now_playing_item, &separator1, &prev_item, &play_pause_item, &next_item, &separator2, &quit_item],
+            )?;
+            app.manage(now_playing_item);
+
+            let tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&tray_menu)
+                .show_menu_on_left_click(false)
+                .on_menu_event(|app, event| {
+                    match event.id().as_ref() {
+                        "quit" => app.exit(0),
+                        id @ ("prev" | "play-pause" | "next") => { app.emit("tray:control", id).ok(); }
+                        _ => {}
+                    }
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let tauri::tray::TrayIconEvent::Click {
+                        button: tauri::tray::MouseButton::Left,
+                        button_state: tauri::tray::MouseButtonState::Up,
+                        rect,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        if let Some(w) = app.get_webview_window("tray-popover") {
+                            let _ = w.close();
+                        } else {
+                            open_tray_popover(app, rect);
+                        }
+                    }
+                })
+                .build(app)?;
+
+            app.manage(tray);
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -741,6 +870,7 @@ pub fn run() {
             discord_update_presence,
             open_miniplayer,
             close_miniplayer,
+            tray_set_now_playing,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

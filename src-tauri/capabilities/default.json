@@ -4,7 +4,8 @@
   "description": "enables the default permissions",
   "windows": [
     "main",
-    "miniplayer"
+    "miniplayer",
+    "tray-popover"
   ],
   "permissions": [
     "core:default",

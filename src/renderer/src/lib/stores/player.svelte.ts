@@ -3,11 +3,13 @@ import { convertFileSrc } from '@tauri-apps/api/core'
 import type { Song } from '../../types'
 import { api } from '../api'
 import { library } from './library.svelte'
+import { getArt } from './artCache.svelte'
 
 let currentSong = $state<Song | null>(null)
 let queue = $state<Song[]>([])
 let queueIndex = $state(0)
 let isPlaying = $state(false)
+let isLoading = $state(false)
 let currentTime = $state(0)
 let duration = $state(0)
 let volume = $state(0.8)
@@ -24,9 +26,17 @@ function getAudio(): HTMLAudioElement {
 
     audio.ontimeupdate = () => { currentTime = audio!.currentTime }
     audio.ondurationchange = () => { duration = audio!.duration || 0 }
-    audio.onplay = () => { isPlaying = true }
+    audio.onplay = () => { isPlaying = true; isLoading = false }
     audio.onpause = () => { isPlaying = false }
     audio.onended = () => { player.next() }
+    audio.onerror = () => { isLoading = false }
+
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.setActionHandler('play', () => player.togglePlay())
+      navigator.mediaSession.setActionHandler('pause', () => player.togglePlay())
+      navigator.mediaSession.setActionHandler('previoustrack', () => player.prev())
+      navigator.mediaSession.setActionHandler('nexttrack', () => player.next())
+    }
   }
   return audio
 }
@@ -36,6 +46,7 @@ export const player = {
   get queue() { return queue },
   get queueIndex() { return queueIndex },
   get isPlaying() { return isPlaying },
+  get isLoading() { return isLoading },
   get currentTime() { return currentTime },
   get duration() { return duration },
   get volume() { return volume },
@@ -57,10 +68,11 @@ export const player = {
     }
 
     currentSong = song
+    isLoading = true
     const a = getAudio()
     a.src = convertFileSrc(song.path)
     a.load()
-    a.play().catch((err) => console.error('[player] play failed:', err))
+    a.play().catch((err) => { isLoading = false; console.error('[player] play failed:', err) })
 
     api.invoke('library:update-play', song.id)
     library.markPlayed(song.id)
@@ -76,6 +88,7 @@ export const player = {
   },
 
   prev() {
+    if (isLoading) return
     if (currentTime > 3) {
       getAudio().currentTime = 0
       return
@@ -86,6 +99,7 @@ export const player = {
   },
 
   next() {
+    if (isLoading) return
     if (repeat === 'one') {
       getAudio().currentTime = 0
       getAudio().play()
@@ -113,10 +127,11 @@ export const player = {
     queueIndex = index
     const song = queue[index]
     currentSong = song
+    isLoading = true
     const a = getAudio()
     a.src = convertFileSrc(song.path)
     a.load()
-    a.play().catch((err) => console.error('[player] play failed:', err))
+    a.play().catch((err) => { isLoading = false; console.error('[player] play failed:', err) })
     library.markPlayed(song.id)
     api.invoke('library:update-play', song.id)
   },
@@ -161,6 +176,25 @@ $effect.root(() => {
   $effect(() => {
     const song = currentSong
     const playing = isPlaying
+    const art = song ? getArt(song.id) : undefined
+
+    api.invoke('tray:set-now-playing', song ? {
+      title: song.title,
+      artist: song.artist,
+      album: song.album,
+      isPlaying: playing,
+      art: art ?? null,
+    } : null)
+
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = song ? new MediaMetadata({
+        title: song.title,
+        artist: song.artist,
+        album: song.album,
+        artwork: art ? [{ src: art, sizes: '512x512', type: art.match(/^data:([^;]+);/)?.[1] ?? 'image/jpeg' }] : []
+      }) : null
+      navigator.mediaSession.playbackState = song ? (playing ? 'playing' : 'paused') : 'none'
+    }
 
     if (pauseTimer) {
       clearTimeout(pauseTimer)
@@ -192,4 +226,10 @@ $effect.root(() => {
       currentTime: ct,
     })
   })
+})
+
+api.on('tray:control', (action) => {
+  if (action === 'prev') player.prev()
+  else if (action === 'next') player.next()
+  else if (action === 'play-pause') player.togglePlay()
 })

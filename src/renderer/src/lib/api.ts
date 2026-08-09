@@ -25,6 +25,7 @@ function mapArgs(channel: string, args: unknown[]): Record<string, unknown> {
     case 'playlist:remove-song':  return { playlist_id: args[0], song_id: args[1] }
     case 'settings:set-discord-presence': return { enabled: args[0] }
     case 'discord:update-presence':       return { payload: args[0] ?? null }
+    case 'tray:set-now-playing':          return { payload: args[0] ?? null }
     default: return {}
   }
 }
