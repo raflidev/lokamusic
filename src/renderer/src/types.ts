@@ -1,11 +1,11 @@
 export interface Song {
   id: string
   path: string
+  folderId?: string
   title: string
   artist: string
   album: string
   duration: number
-  albumArt?: string
   lyrics?: string
   dateAdded: number
   liked: boolean

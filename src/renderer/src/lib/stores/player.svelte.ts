@@ -16,8 +16,31 @@ let volume = $state(0.8)
 let shuffle = $state(false)
 let repeat = $state<'none' | 'one' | 'all'>('none')
 let originalQueue = $state<Song[]>([])
+let error = $state<string | null>(null)
 
 let audio: HTMLAudioElement | null = null
+let persistTimer: ReturnType<typeof setTimeout> | null = null
+
+function shuffleArray<T>(items: T[]): T[] {
+  const result = [...items]
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[result[i], result[j]] = [result[j], result[i]]
+  }
+  return result
+}
+
+function playbackError(song: Song | null) {
+  error = song ? `Unable to play “${song.title}”.` : 'Unable to play this file.'
+}
+
+function persistPlayback() {
+  if (persistTimer) clearTimeout(persistTimer)
+  persistTimer = setTimeout(() => {
+    persistTimer = null
+    api.invoke('settings:set-playback', volume, shuffle, repeat).catch(() => {})
+  }, 300)
+}
 
 function getAudio(): HTMLAudioElement {
   if (!audio) {
@@ -26,10 +49,10 @@ function getAudio(): HTMLAudioElement {
 
     audio.ontimeupdate = () => { currentTime = audio!.currentTime }
     audio.ondurationchange = () => { duration = audio!.duration || 0 }
-    audio.onplay = () => { isPlaying = true; isLoading = false }
+    audio.onplay = () => { isPlaying = true; isLoading = false; error = null }
     audio.onpause = () => { isPlaying = false }
-    audio.onended = () => { player.next() }
-    audio.onerror = () => { isLoading = false }
+    audio.onended = () => { player.next(true) }
+    audio.onerror = () => { isLoading = false; playbackError(currentSong) }
 
     if ('mediaSession' in navigator) {
       navigator.mediaSession.setActionHandler('play', () => player.togglePlay())
@@ -52,13 +75,13 @@ export const player = {
   get volume() { return volume },
   get shuffle() { return shuffle },
   get repeat() { return repeat },
+  get error() { return error },
 
   playSong(song: Song, songList?: Song[]) {
     if (songList) {
       originalQueue = songList
       if (shuffle) {
-        const others = songList.filter(s => s.id !== song.id).sort(() => Math.random() - 0.5)
-        queue = [song, ...others]
+        queue = [song, ...shuffleArray(songList.filter(s => s.id !== song.id))]
         queueIndex = 0
       } else {
         const idx = songList.findIndex(s => s.id === song.id)
@@ -69,12 +92,17 @@ export const player = {
 
     currentSong = song
     isLoading = true
+    error = null
     const a = getAudio()
     a.src = convertFileSrc(song.path)
     a.load()
-    a.play().catch((err) => { isLoading = false; console.error('[player] play failed:', err) })
+    a.play().catch((err) => {
+      isLoading = false
+      playbackError(song)
+      console.error('[player] play failed:', err)
+    })
 
-    api.invoke('library:update-play', song.id)
+    api.invoke('library:update-play', song.id).catch(() => {})
     library.markPlayed(song.id)
   },
 
@@ -83,12 +111,11 @@ export const player = {
     if (isPlaying) {
       a.pause()
     } else if (currentSong) {
-      a.play()
+      a.play().catch(() => playbackError(currentSong))
     }
   },
 
   prev() {
-    if (isLoading) return
     if (currentTime > 3) {
       getAudio().currentTime = 0
       return
@@ -98,11 +125,12 @@ export const player = {
     player.playSong(queue[queueIndex])
   },
 
-  next() {
-    if (isLoading) return
-    if (repeat === 'one') {
-      getAudio().currentTime = 0
-      getAudio().play()
+  /** `fromEnded` is true when the audio element reached the end by itself. */
+  next(fromEnded = false) {
+    if (fromEnded && repeat === 'one') {
+      const a = getAudio()
+      a.currentTime = 0
+      a.play().catch(() => {})
       return
     }
     if (queue.length === 0) return
@@ -128,25 +156,31 @@ export const player = {
     const song = queue[index]
     currentSong = song
     isLoading = true
+    error = null
     const a = getAudio()
     a.src = convertFileSrc(song.path)
     a.load()
-    a.play().catch((err) => { isLoading = false; console.error('[player] play failed:', err) })
+    a.play().catch((err) => {
+      isLoading = false
+      playbackError(song)
+      console.error('[player] play failed:', err)
+    })
     library.markPlayed(song.id)
-    api.invoke('library:update-play', song.id)
+    api.invoke('library:update-play', song.id).catch(() => {})
   },
 
   setVolume(v: number) {
-    volume = v
-    getAudio().volume = v
+    volume = Math.max(0, Math.min(1, v))
+    getAudio().volume = volume
+    persistPlayback()
   },
 
   toggleShuffle() {
     shuffle = !shuffle
+    persistPlayback()
     if (!currentSong || queue.length === 0) return
     if (shuffle) {
-      const others = queue.filter(s => s.id !== currentSong!.id).sort(() => Math.random() - 0.5)
-      queue = [currentSong!, ...others]
+      queue = [currentSong!, ...shuffleArray(queue.filter(s => s.id !== currentSong!.id))]
       queueIndex = 0
     } else {
       const src = originalQueue.length > 0 ? originalQueue : queue
@@ -157,6 +191,22 @@ export const player = {
   },
   toggleRepeat() {
     repeat = repeat === 'none' ? 'all' : repeat === 'all' ? 'one' : 'none'
+    persistPlayback()
+  },
+
+  /** Applies the persisted playback settings at startup. */
+  restore(settings?: { volume?: number; shuffle?: boolean; repeat?: string } | null) {
+    if (!settings) return
+    if (typeof settings.volume === 'number' && Number.isFinite(settings.volume)) {
+      volume = Math.max(0, Math.min(1, settings.volume))
+      if (audio) audio.volume = volume
+    }
+    shuffle = !!settings.shuffle
+    repeat = settings.repeat === 'one' || settings.repeat === 'all' ? settings.repeat : 'none'
+  },
+
+  clearError() {
+    error = null
   },
 
   updateCurrentSongLyrics(lyrics: string) {
@@ -184,7 +234,7 @@ $effect.root(() => {
       album: song.album,
       isPlaying: playing,
       art: art ?? null,
-    } : null)
+    } : null).catch(() => {})
 
     if ('mediaSession' in navigator) {
       navigator.mediaSession.metadata = song ? new MediaMetadata({
@@ -202,13 +252,13 @@ $effect.root(() => {
     }
 
     if (!song) {
-      api.invoke('discord:update-presence', null)
+      api.invoke('discord:update-presence', null).catch(() => {})
       return
     }
 
     if (!playing) {
       pauseTimer = setTimeout(() => {
-        api.invoke('discord:update-presence', null)
+        api.invoke('discord:update-presence', null).catch(() => {})
         pauseTimer = null
       }, 5000)
       return
@@ -224,7 +274,7 @@ $effect.root(() => {
       isPlaying: true,
       duration: dur,
       currentTime: ct,
-    })
+    }).catch(() => {})
   })
 })
 

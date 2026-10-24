@@ -4,6 +4,24 @@
   import { ui } from '../stores/ui.svelte'
   import { getArt } from '../stores/artCache.svelte'
 
+  const PAGE_SIZE = 50
+  const upNext = $derived(player.queue.slice(player.queueIndex + 1))
+  let visibleCount = $state(PAGE_SIZE)
+  const visibleUpNext = $derived(upNext.slice(0, visibleCount))
+
+  $effect(() => {
+    upNext.length
+    visibleCount = PAGE_SIZE
+  })
+
+  function onQueueScroll(e: Event) {
+    const el = e.currentTarget as HTMLElement
+    if (el.scrollTop + el.clientHeight < el.scrollHeight - 200) return
+    if (visibleCount < upNext.length) {
+      visibleCount = Math.min(upNext.length, visibleCount + PAGE_SIZE)
+    }
+  }
+
   function formatDuration(s: number): string {
     if (!s) return '--'
     return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`
@@ -40,12 +58,11 @@
   {/if}
 
   {#if player.queue.length > 0}
-    {@const upNext = player.queue.slice(player.queueIndex + 1)}
     {#if upNext.length > 0}
       <div class="section">
         <p class="section-label">Up Next <span class="count">{upNext.length}</span></p>
-        <div class="queue-list">
-          {#each upNext as song, i}
+        <div class="queue-list" onscroll={onQueueScroll}>
+          {#each visibleUpNext as song, i}
             {@const absIdx = player.queueIndex + 1 + i}
             <button class="queue-item" onclick={() => player.playAt(absIdx)}>
               <span class="item-num">{i + 1}</span>
@@ -68,13 +85,13 @@
     {:else}
       <div class="empty-queue">
         <Icon name="queue" size={32} />
-        <p>Queue kosong</p>
+        <p>Queue is empty</p>
       </div>
     {/if}
   {:else}
     <div class="empty-queue">
       <Icon name="queue" size={32} />
-      <p>Belum ada queue</p>
+      <p>Nothing in the queue yet</p>
     </div>
   {/if}
 </aside>

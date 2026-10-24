@@ -7,6 +7,7 @@
   import type { Song, Playlist } from '../../types'
   import { api } from '../api'
   import { getArt } from '../stores/artCache.svelte'
+  import { focusOnMount } from '../actions'
 
   let hoveredRowId = $state<string | null>(null)
   let editingName = $state(false)
@@ -72,7 +73,6 @@
 
   function playSong(song: Song) {
     player.playSong(song, displaySongs)
-    api.invoke('library:update-play', song.id)
   }
 
   function formatDuration(s: number): string {
@@ -118,7 +118,7 @@
 
 <!-- Backdrop for sort dropdown -->
 {#if showSortDropdown}
-  <div class="backdrop" onclick={() => showSortDropdown = false}></div>
+  <button type="button" class="backdrop" aria-label="Close sort menu" onclick={() => showSortDropdown = false}></button>
 {/if}
 
 <div class="playlist-view">
@@ -145,7 +145,7 @@
               if (e.key === 'Escape') editingName = false
             }}
             onblur={saveNameEdit}
-            autofocus
+            use:focusOnMount
           />
         {:else}
           <button class="playlist-name" onclick={startEditName} title="Click to rename">
@@ -484,7 +484,6 @@
   .song-row.active .song-name { color: var(--on-primary-container); }
 
   .col-num { width: 40px; text-align: center; }
-  .col-title { }
   .col-album { width: 200px; }
   .col-date { width: 140px; }
   .col-duration { width: 60px; text-align: right; }

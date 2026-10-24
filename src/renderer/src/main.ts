@@ -3,10 +3,7 @@ import './app.css'
 import App from './App.svelte'
 import MiniPlayerApp from './MiniPlayerApp.svelte'
 import TrayPopoverApp from './TrayPopoverApp.svelte'
-import { initAnalytics } from './lib/analytics'
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow'
-
-initAnalytics()
 
 let label = ''
 try {

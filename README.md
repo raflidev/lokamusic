@@ -9,15 +9,15 @@
     Scan your folders, manage your library, and play your music — fully offline.
 </p>
 
-![lokamusic homepage](image.png)
+![lokamusic homepage](docs/screenshot-library.png)
 
-![lokamusic player menu](image-1.png)
+![lokamusic player menu](docs/screenshot-player.png)
 
 ---
 
 ## What is lokamusic?
 
-lokamusic is a lightweight desktop app for playing your local music collection. No subscriptions, no internet required — just point it at a folder full of music files and lokamusic handles the rest automatically.
+lokamusic is a lightweight desktop app for playing your local music collection. No subscriptions, no account required — just point it at a folder full of music files and lokamusic handles the rest automatically. Optional features (Discord presence, lyrics lookup, updates, anonymous analytics) use the internet and can be disabled.
 
 ---
 
@@ -65,7 +65,7 @@ lokamusic is a lightweight desktop app for playing your local music collection. 
 
 ## Download
 
-Visit the [Releases](https://github.com/raflidev/lokamusic/releases) page to download the latest version. Available for macOS, Windows, and Linux.
+Visit the [Releases](https://github.com/raflidev/lokamusic/releases) page to download the latest version. Available for macOS and Windows.
 
 ---
 
@@ -79,6 +79,7 @@ npm run build            # production build (Tauri bundle)
 npm run dev:renderer     # start Vite renderer only (no Tauri)
 npm run build:renderer   # build renderer only
 npm run check            # type-check Svelte files
+npm run version:sync     # sync package.json version to Cargo.toml + tauri.conf.json
 ```
 
 ### Stack
@@ -87,7 +88,7 @@ npm run check            # type-check Svelte files
 |---|---|
 | Desktop shell | Tauri 2 |
 | UI framework | Svelte 5 (runes) |
-| Language | TypeScript 5 + Rust |
+| Language | TypeScript 6 + Rust |
 | Build tool | Vite 5 + `@sveltejs/vite-plugin-svelte@4` |
 | Styling | CSS custom properties (design tokens) |
 | Persistence | `tauri-plugin-store` → `config.json` |
@@ -98,8 +99,12 @@ npm run check            # type-check Svelte files
 ### Important Notes
 
 - **Do not upgrade** `@sveltejs/vite-plugin-svelte` beyond v4 or `vite` beyond v5 — `@sveltejs/vite-plugin-svelte@6` has a bug with the Vite Environment API that causes `.ts` files to be compiled as Svelte.
-- Library data is persisted to `~/Library/Application Support/lokamusic/config.json` on macOS.
+- Library data is persisted to `~/Library/Application Support/com.lokamusic/config.json` on macOS.
 - Audio playback uses the HTML5 `<audio>` element with native paths converted via `convertFileSrc()` from Tauri.
 - Pinned folders are stored in renderer `localStorage` only (not in the Tauri store).
+- Album art is never persisted in `config.json`; it is read on demand from each audio file.
+- Release builds enable updater artifacts via `src-tauri/tauri.updater.conf.json`, which requires `TAURI_SIGNING_PRIVATE_KEY` (set in CI). Local `npm run build` skips updater artifacts.
+- The asset protocol scope starts empty; only watched folders and imported files are granted access at runtime.
+- Anonymous analytics (PostHog) can be turned off in Settings → Privacy. No listening history or personal data is sent.
 - Discord artwork is cached per `artist::album` key in Rust state to avoid redundant iTunes API calls.
 - Design tokens and color system are documented in `DESIGN.md`.

@@ -3,8 +3,8 @@
   import { library } from '../stores/library.svelte'
   import { player } from '../stores/player.svelte'
   import type { Song, WatchedFolder } from '../../types'
-  import { api } from '../api'
   import { getArt } from '../stores/artCache.svelte'
+  import { isPathInside, relativePath } from '../paths'
 
   type Level = { name: string; path: string; folderId?: string }
 
@@ -19,10 +19,10 @@
       // Root: show watched folders as items
       return library.folders.map(f => ({ name: f.name, path: f.path, folderId: f.id, songCount: f.songCount }))
     }
-    const prefix = currentLevel.path + '/'
+    const prefix = currentLevel.path.replace(/\/+$/, '') + '/'
     const childMap = new Map<string, number>()
     for (const song of library.songs) {
-      if (!song.path.startsWith(prefix)) continue
+      if (!isPathInside(song.path, currentLevel.path)) continue
       const rel = song.path.slice(prefix.length)
       const idx = rel.indexOf('/')
       if (idx === -1) continue
@@ -37,26 +37,22 @@
   // Direct + nested songs at current level (for leaf or mixed folders)
   const songs = $derived.by<Song[]>(() => {
     if (!currentLevel) return []
-    const prefix = currentLevel.path + '/'
-    return library.songs.filter(s => s.path.startsWith(prefix))
+    return library.songs.filter(s => isPathInside(s.path, currentLevel.path))
   })
 
   // Songs directly in the current folder (not in sub-folders)
   const directSongs = $derived.by<Song[]>(() => {
     if (!currentLevel) return []
-    const prefix = currentLevel.path + '/'
     return library.songs.filter(s => {
-      if (!s.path.startsWith(prefix)) return false
-      const rel = s.path.slice(prefix.length)
-      return !rel.includes('/')
+      const rel = relativePath(s.path, currentLevel.path)
+      return rel !== null && rel !== '' && !rel.includes('/')
     })
   })
 
   function getFolderArtIds(path: string): string[] {
-    const prefix = path + '/'
     const result: string[] = []
     for (const song of library.songs) {
-      if (!song.path.startsWith(prefix)) continue
+      if (!isPathInside(song.path, path)) continue
       result.push(song.id)
       if (result.length === 4) break
     }
@@ -65,6 +61,27 @@
 
   function enter(item: { name: string; path: string; folderId?: string }) {
     stack = [...stack, { name: item.name, path: item.path, folderId: item.folderId }]
+  }
+
+  // Render long song lists in chunks to keep DOM size and cover-art loading bounded.
+  const SONG_PAGE_SIZE = 100
+  let visibleSongCount = $state(SONG_PAGE_SIZE)
+  const visibleDirectSongs = $derived(directSongs.slice(0, visibleSongCount))
+  const songsKey = $derived(
+    `${directSongs.length}:${directSongs[0]?.id ?? ''}:${directSongs[directSongs.length - 1]?.id ?? ''}`
+  )
+
+  $effect(() => {
+    songsKey
+    visibleSongCount = SONG_PAGE_SIZE
+  })
+
+  function onContentScroll(e: Event) {
+    const el = e.currentTarget as HTMLElement
+    if (el.scrollTop + el.clientHeight < el.scrollHeight - 300) return
+    if (visibleSongCount < directSongs.length) {
+      visibleSongCount = Math.min(directSongs.length, visibleSongCount + SONG_PAGE_SIZE)
+    }
   }
 
   function goTo(index: number) {
@@ -82,7 +99,6 @@
 
   function playSong(song: Song, queue: Song[]) {
     player.playSong(song, queue)
-    api.invoke('library:update-play', song.id)
   }
 
   function playAll() {
@@ -113,7 +129,7 @@
     {/if}
   </div>
 
-  <div class="content">
+  <div class="content" onscroll={onContentScroll}>
     <!-- Sub-folder grid -->
     {#if subFolders.length > 0}
       {#if currentLevel && directSongs.length > 0}
@@ -167,7 +183,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each directSongs as song, i}
+          {#each visibleDirectSongs as song, i}
             {@const isActive = player.currentSong?.id === song.id}
             <tr
               class="song-row"
@@ -297,7 +313,7 @@
     transition: background 0.12s;
   }
 
-  .play-all-btn:hover { background: var(--tertiary); }
+  .play-all-btn:hover { background: var(--secondary-container); }
 
   .content {
     flex: 1;
@@ -535,6 +551,7 @@
     color: var(--on-surface-variant);
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     white-space: normal;

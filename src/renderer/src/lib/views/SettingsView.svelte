@@ -5,20 +5,24 @@
   import type { Update } from '@tauri-apps/plugin-updater'
   import { player } from '../stores/player.svelte'
   import { api } from '../api'
+  import { initAnalytics } from '../analytics'
 
   let { update = null }: { update: Update | null } = $props()
 
   let discordPresence = $state(true)
+  let analyticsEnabled = $state(true)
   let toggling = $state(false)
+  let togglingAnalytics = $state(false)
   let appVersion = $state('')
   let installing = $state(false)
 
   onMount(async () => {
     const [settings, version] = await Promise.all([
-      api.invoke('settings:get') as Promise<{ discordPresence: boolean }>,
+      api.invoke('settings:get') as Promise<{ discordPresence: boolean; analytics: boolean }>,
       getVersion(),
     ])
     discordPresence = settings.discordPresence ?? true
+    analyticsEnabled = settings.analytics ?? true
     appVersion = version
   })
 
@@ -38,12 +42,27 @@
           isPlaying: player.isPlaying,
           duration: player.duration || song.duration,
           currentTime: player.currentTime,
-        })
+        }).catch(() => {})
       }
       toggling = false
     }).catch(() => {
       toggling = false
     })
+  }
+
+  async function toggleAnalytics() {
+    if (togglingAnalytics) return
+    togglingAnalytics = true
+    const next = !analyticsEnabled
+    try {
+      await api.invoke('settings:set-analytics', next)
+      analyticsEnabled = next
+      await initAnalytics(next)
+    } catch {
+      // Keep the previous state when persisting fails.
+    } finally {
+      togglingAnalytics = false
+    }
   }
 
   async function installUpdate() {
@@ -69,11 +88,11 @@
     <div class="setting-row" class:loading={installing}>
       <div class="setting-info">
         {#if installing}
-          <span class="setting-label">Mengunduh update…</span>
-          <span class="setting-desc">App akan restart otomatis setelah selesai</span>
+          <span class="setting-label">Downloading update…</span>
+          <span class="setting-desc">The app will restart automatically when finished</span>
         {:else if update}
-          <span class="setting-label">Update tersedia: <strong>v{update.version}</strong></span>
-          <span class="setting-desc">Versi saat ini: v{appVersion}</span>
+          <span class="setting-label">Update available: <strong>v{update.version}</strong></span>
+          <span class="setting-desc">Current version: v{appVersion}</span>
         {:else}
           <span class="setting-label">lokamusic is up to date</span>
           <span class="setting-desc">{appVersion ? `v${appVersion}` : ''}</span>
@@ -97,7 +116,7 @@
     <div class="setting-row" class:loading={toggling}>
       <div class="setting-info">
         <span class="setting-label">Discord Rich Presence</span>
-        <span class="setting-desc">Tampilkan lagu yang sedang diputar di Discord</span>
+        <span class="setting-desc">Show the song currently playing on Discord</span>
       </div>
       {#if toggling}
         <span class="spinner" aria-label="Loading…"></span>
@@ -107,6 +126,29 @@
           class:on={discordPresence}
           onclick={toggleDiscord}
           aria-label="Toggle Discord Rich Presence"
+        >
+          <span class="thumb"></span>
+        </button>
+      {/if}
+    </div>
+  </div>
+
+  <div class="section">
+    <p class="section-title">Privacy</p>
+
+    <div class="setting-row" class:loading={togglingAnalytics}>
+      <div class="setting-info">
+        <span class="setting-label">Anonymous usage analytics</span>
+        <span class="setting-desc">Share anonymous app usage events. No personal data or listening history is sent.</span>
+      </div>
+      {#if togglingAnalytics}
+        <span class="spinner" aria-label="Saving…"></span>
+      {:else}
+        <button
+          class="toggle"
+          class:on={analyticsEnabled}
+          onclick={toggleAnalytics}
+          aria-label="Toggle anonymous usage analytics"
         >
           <span class="thumb"></span>
         </button>
@@ -126,6 +168,10 @@
 
   .header {
     margin-bottom: 40px;
+  }
+
+  .section + .section {
+    margin-top: 32px;
   }
 
   h1 {

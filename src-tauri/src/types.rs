@@ -5,13 +5,14 @@ use serde::{Deserialize, Serialize};
 pub struct Song {
     pub id: String,
     pub path: String,
+    /// Watched folder the song belongs to. `None` for directly imported songs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub folder_id: Option<String>,
     pub title: String,
     pub artist: String,
     pub album: String,
     pub duration: f64,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub album_art: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lyrics: Option<String>,
     pub date_added: f64,
     pub liked: bool,
@@ -53,10 +54,28 @@ pub struct Playlist {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
+    #[serde(default = "default_volume")]
     pub volume: f64,
+    #[serde(default)]
     pub shuffle: bool,
+    #[serde(default = "default_repeat")]
     pub repeat: String,
+    #[serde(default = "default_true")]
     pub discord_presence: bool,
+    #[serde(default = "default_true")]
+    pub analytics: bool,
+}
+
+fn default_volume() -> f64 {
+    0.8
+}
+
+fn default_repeat() -> String {
+    "none".to_string()
+}
+
+fn default_true() -> bool {
+    true
 }
 
 impl Default for Settings {
@@ -66,6 +85,7 @@ impl Default for Settings {
             shuffle: false,
             repeat: "none".to_string(),
             discord_presence: true,
+            analytics: true,
         }
     }
 }

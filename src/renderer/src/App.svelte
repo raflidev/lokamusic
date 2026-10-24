@@ -19,41 +19,98 @@
   import { playlistStore } from './lib/stores/playlists.svelte'
   import { api } from './lib/api'
   import { getArt } from './lib/stores/artCache.svelte'
-  import { trackEvent } from './lib/analytics'
+  import { initAnalytics, trackEvent } from './lib/analytics'
   import { listen, emit } from '@tauri-apps/api/event'
   import type { Song, WatchedFolder, Playlist } from './types'
   import type { UnlistenFn } from '@tauri-apps/api/event'
+
+  type Settings = {
+    volume: number
+    shuffle: boolean
+    repeat: string
+    discordPresence: boolean
+    analytics: boolean
+  }
+
+  type MiniState = {
+    song: { id: string; title: string; artist: string; album: string; albumArt?: string } | null
+    isPlaying: boolean
+    isLoading: boolean
+    liked: boolean
+    shuffle: boolean
+    repeat: string
+  }
 
   let pendingUpdate = $state<Update | null>(null)
   let prevVolume = $state(0.8)
   let unlistenMpCmd: UnlistenFn | null = null
   let unlistenMpReq: UnlistenFn | null = null
+  let lastMiniKey = ''
+  let lastProgressAt = 0
 
-  // Emit player state to the mini player window whenever it changes
-  $effect(() => {
-    const liked = player.currentSong
-      ? library.songs.find(s => s.id === player.currentSong!.id)?.liked ?? false
-      : false
-
-    emit('miniplayer:state', {
-      song: player.currentSong
+  function buildMiniState(): MiniState {
+    const song = player.currentSong
+    return {
+      song: song
         ? {
-            id: player.currentSong.id,
-            title: player.currentSong.title,
-            artist: player.currentSong.artist,
-            album: player.currentSong.album,
-            albumArt: getArt(player.currentSong.id),
+            id: song.id,
+            title: song.title,
+            artist: song.artist,
+            album: song.album,
+            albumArt: getArt(song.id),
           }
         : null,
       isPlaying: player.isPlaying,
       isLoading: player.isLoading,
-      currentTime: player.currentTime,
-      duration: player.duration,
-      liked,
+      liked: song ? library.songs.find(s => s.id === song.id)?.liked ?? false : false,
       shuffle: player.shuffle,
       repeat: player.repeat,
+    }
+  }
+
+  function miniStateKey(state: MiniState): string {
+    const art = state.song?.albumArt
+    return [
+      state.song?.id ?? '',
+      art ? `${art.length}:${art.slice(0, 24)}` : '',
+      state.isPlaying ? 1 : 0,
+      state.isLoading ? 1 : 0,
+      state.liked ? 1 : 0,
+      state.shuffle ? 1 : 0,
+      state.repeat,
+    ].join('|')
+  }
+
+  function emitMiniState() {
+    emit('miniplayer:state', buildMiniState()).catch(() => {})
+  }
+
+  function emitMiniProgress() {
+    emit('miniplayer:progress', {
+      currentTime: player.currentTime,
+      duration: player.duration,
       volume: player.volume,
     }).catch(() => {})
+  }
+
+  // Metadata changes (including cover art) are rare: send them as they happen.
+  $effect(() => {
+    const state = buildMiniState()
+    const key = miniStateKey(state)
+    if (key === lastMiniKey) return
+    lastMiniKey = key
+    emit('miniplayer:state', state).catch(() => {})
+  })
+
+  // Playback progress is high frequency: throttle to two updates per second.
+  $effect(() => {
+    const currentTime = player.currentTime
+    const duration = player.duration
+    const volume = player.volume
+    const now = Date.now()
+    if (now - lastProgressAt < 500 && currentTime < duration) return
+    lastProgressAt = now
+    emit('miniplayer:progress', { currentTime, duration, volume }).catch(() => {})
   })
 
   function onScanProgress(progress: { folderId: string; scanned: number; total: number; percent: number }) {
@@ -108,7 +165,7 @@
       case 'KeyL':
         if (!player.currentSong) break
         e.preventDefault()
-        api.invoke('library:toggle-like', player.currentSong.id)
+        api.invoke('library:toggle-like', player.currentSong.id).catch(() => {})
         library.toggleLike(player.currentSong.id)
         break
       case 'KeyS':
@@ -145,14 +202,19 @@
   }
 
   onMount(async () => {
-    const [songs, folders, playlists] = await Promise.all([
+    const [songs, folders, playlists, settings] = await Promise.all([
       api.invoke('library:get-all-songs') as Promise<Song[]>,
       api.invoke('library:get-folders') as Promise<WatchedFolder[]>,
       api.invoke('playlist:get-all') as Promise<Playlist[]>,
+      api.invoke('settings:get').catch(() => null) as Promise<Settings | null>,
     ])
     library.setSongs(songs ?? [])
     library.setFolders(folders ?? [])
     playlistStore.set(playlists ?? [])
+    player.restore(settings)
+
+    await initAnalytics(settings?.analytics !== false)
+    trackEvent('app_opened')
 
     await api.on('library:scan-progress', onScanProgress as (...args: unknown[]) => void)
     await api.on('library:scan-complete', onScanComplete as (...args: unknown[]) => void)
@@ -168,7 +230,7 @@
           case 'next': player.next(); break
           case 'toggle-like':
             if (player.currentSong) {
-              api.invoke('library:toggle-like', player.currentSong.id)
+              api.invoke('library:toggle-like', player.currentSong.id).catch(() => {})
               library.toggleLike(player.currentSong.id)
             }
             break
@@ -187,32 +249,12 @@
 
     // When mini player opens, it requests current state immediately
     unlistenMpReq = await listen('miniplayer:request-state', () => {
-      const liked = player.currentSong
-        ? library.songs.find(s => s.id === player.currentSong!.id)?.liked ?? false
-        : false
-      emit('miniplayer:state', {
-        song: player.currentSong
-          ? {
-              id: player.currentSong.id,
-              title: player.currentSong.title,
-              artist: player.currentSong.artist,
-              albumArt: getArt(player.currentSong.id),
-            }
-          : null,
-        isPlaying: player.isPlaying,
-      isLoading: player.isLoading,
-        currentTime: player.currentTime,
-        duration: player.duration,
-        liked,
-        shuffle: player.shuffle,
-        repeat: player.repeat,
-        volume: player.volume,
-      }).catch(() => {})
+      lastMiniKey = miniStateKey(buildMiniState())
+      emitMiniState()
+      emitMiniProgress()
     })
 
     check().then(update => { pendingUpdate = update ?? null }).catch(() => {})
-
-    trackEvent('app_opened')
   })
 
   onDestroy(() => {
@@ -257,6 +299,13 @@
   {#if ui.currentView !== 'player'}
     <BottomBar />
   {/if}
+
+  {#if player.error}
+    <div class="toast" role="alert">
+      <span>{player.error}</span>
+      <button class="toast-close" onclick={() => player.clearError()} aria-label="Dismiss">×</button>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -280,4 +329,36 @@
     overflow: hidden;
     background: var(--surface);
   }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--bottom-bar-height) + 16px);
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: min(560px, calc(100vw - 32px));
+    padding: 10px 14px;
+    background: var(--error-container);
+    color: var(--on-surface);
+    border: 1px solid var(--error);
+    border-radius: var(--radius-lg);
+    font-size: 13px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 2000;
+  }
+
+  .toast-close {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    color: inherit;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0.7;
+  }
+
+  .toast-close:hover { opacity: 1; }
 </style>

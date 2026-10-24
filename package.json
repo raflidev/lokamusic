@@ -9,6 +9,7 @@
     "dev:renderer": "vite",
     "build:renderer": "vite build",
     "check": "svelte-check --tsconfig ./tsconfig.web.json",
+    "version:sync": "node scripts/sync-version.mjs",
     "tauri": "tauri"
   },
   "devDependencies": {

@@ -3,9 +3,7 @@
   "identifier": "default",
   "description": "enables the default permissions",
   "windows": [
-    "main",
-    "miniplayer",
-    "tray-popover"
+    "main"
   ],
   "permissions": [
     "core:default",

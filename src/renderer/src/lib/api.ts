@@ -14,16 +14,18 @@ function mapArgs(channel: string, args: unknown[]): Record<string, unknown> {
     case 'library:remove-folder': return { id: args[0] }
     case 'library:scan-folder':   return { id: args[0] }
     case 'library:import-files':  return { paths: args[0] }
-    case 'library:toggle-like':   return { song_id: args[0] }
-    case 'library:set-lyrics':    return { song_id: args[0], lyrics: args[1] }
+    case 'library:toggle-like':   return { songId: args[0] }
+    case 'library:set-lyrics':    return { songId: args[0], lyrics: args[1] }
     case 'library:fetch-lyrics':  return { songId: args[0], title: args[1], artist: args[2], album: args[3], duration: args[4] }
-    case 'library:update-play':   return { song_id: args[0] }
+    case 'library:update-play':   return { songId: args[0] }
     case 'playlist:create':       return { name: args[0] }
     case 'playlist:delete':       return { id: args[0] }
     case 'playlist:rename':       return { id: args[0], name: args[1] }
-    case 'playlist:add-song':     return { playlist_id: args[0], song_id: args[1] }
-    case 'playlist:remove-song':  return { playlist_id: args[0], song_id: args[1] }
+    case 'playlist:add-song':     return { playlistId: args[0], songId: args[1] }
+    case 'playlist:remove-song':  return { playlistId: args[0], songId: args[1] }
     case 'settings:set-discord-presence': return { enabled: args[0] }
+    case 'settings:set-playback':          return { volume: args[0], shuffle: args[1], repeat: args[2] }
+    case 'settings:set-analytics':         return { enabled: args[0] }
     case 'discord:update-presence':       return { payload: args[0] ?? null }
     case 'tray:set-now-playing':          return { payload: args[0] ?? null }
     default: return {}

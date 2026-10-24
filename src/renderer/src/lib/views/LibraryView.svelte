@@ -7,6 +7,8 @@
   import type { Song, Playlist } from '../../types'
   import { api } from '../api'
   import { getArt } from '../stores/artCache.svelte'
+  import { isPathInside } from '../paths'
+  import { focusOnMount } from '../actions'
 
   let searchQuery = $derived(ui.searchQuery)
   let hoveredRowId = $state<string | null>(null)
@@ -59,9 +61,9 @@
 
   const baseSongs = $derived(
     ui.selectedSubFolderPath
-      ? library.songs.filter(s => s.path.startsWith(ui.selectedSubFolderPath! + '/'))
+      ? library.songs.filter(s => isPathInside(s.path, ui.selectedSubFolderPath!))
       : activeFolder
-        ? library.songs.filter(s => s.path.startsWith(activeFolder.path))
+        ? library.songs.filter(s => isPathInside(s.path, activeFolder.path))
         : library.songs
   )
 
@@ -93,9 +95,30 @@
     return arr
   })())
 
+  // Render the table in chunks: avoids building thousands of rows and loading
+  // cover art for the whole library at once.
+  const PAGE_SIZE = 100
+  let visibleCount = $state(PAGE_SIZE)
+  const visibleSongs = $derived(displaySongs.slice(0, visibleCount))
+  const listKey = $derived(
+    `${displaySongs.length}:${displaySongs[0]?.id ?? ''}:${displaySongs[displaySongs.length - 1]?.id ?? ''}`
+  )
+
+  $effect(() => {
+    listKey
+    visibleCount = PAGE_SIZE
+  })
+
+  function onContentScroll(e: Event) {
+    const el = e.currentTarget as HTMLElement
+    if (el.scrollTop + el.clientHeight < el.scrollHeight - 400) return
+    if (visibleCount < displaySongs.length) {
+      visibleCount = Math.min(displaySongs.length, visibleCount + PAGE_SIZE)
+    }
+  }
+
   function playSong(song: Song) {
     player.playSong(song, displaySongs)
-    api.invoke('library:update-play', song.id)
   }
 
   function formatDuration(s: number): string {
@@ -146,12 +169,12 @@
 
 <!-- Backdrop for filter dropdown -->
 {#if showFilterDropdown}
-  <div class="backdrop" onclick={() => showFilterDropdown = false}></div>
+  <button type="button" class="backdrop" aria-label="Close filter menu" onclick={() => showFilterDropdown = false}></button>
 {/if}
 
 <!-- Backdrop for playlist menu -->
 {#if playlistMenuSongId}
-  <div class="backdrop" onclick={closePlaylistMenu}></div>
+  <button type="button" class="backdrop" aria-label="Close playlist menu" onclick={closePlaylistMenu}></button>
 {/if}
 
 <!-- Playlist menu (fixed position) -->
@@ -177,7 +200,7 @@
             if (e.key === 'Enter') createPlaylistAndAdd()
             if (e.key === 'Escape') { creatingFromMenu = false; newPlaylistName = '' }
           }}
-          autofocus
+          use:focusOnMount
         />
         <button class="playlist-menu-confirm" onclick={createPlaylistAndAdd}>Create</button>
       </div>
@@ -206,7 +229,7 @@
     </div>
   </div>
 
-  <div class="content">
+  <div class="content" onscroll={onContentScroll}>
     {#if library.recentlyPlayed.length > 0 && !searchQuery && !activeFolder && !ui.selectedSubFolderPath}
       <section class="recently-played">
         <h2 class="section-title">Recently Played</h2>
@@ -220,7 +243,7 @@
                   <div class="strip-art-placeholder"><Icon name="music" size={28} /></div>
                 {/if}
                 {#if i === 0}
-                  <span class="strip-badge">MOST PLAYED</span>
+                  <span class="strip-badge">LATEST</span>
                 {/if}
                 <div class="strip-play-overlay"><Icon name="play" size={20} /></div>
               </div>
@@ -305,7 +328,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each displaySongs as song, i}
+            {#each visibleSongs as song, i}
               {@const isActive = player.currentSong?.id === song.id}
               <tr
                 class="song-row"
@@ -415,19 +438,6 @@
   .topbar-actions {
     display: flex;
     gap: 4px;
-  }
-
-  .icon-btn {
-    color: var(--on-surface-variant);
-    padding: 8px;
-    border-radius: var(--radius-lg);
-    display: flex;
-    transition: color 0.12s, background 0.12s;
-  }
-
-  .icon-btn:hover {
-    color: var(--on-surface);
-    background: var(--surface-container);
   }
 
   .content {
@@ -770,7 +780,6 @@
   .song-row.active .song-name { color: var(--on-primary-container); }
 
   .col-num { width: 40px; text-align: center; }
-  .col-title { }
   .col-album { width: 200px; }
   .col-date { width: 140px; }
   .col-duration { width: 60px; text-align: right; }
@@ -878,6 +887,7 @@
     transition: color 0.1s;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     max-width: 100%;

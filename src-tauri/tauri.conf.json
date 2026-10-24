@@ -15,8 +15,8 @@
         "title": "lokamusic",
         "width": 1300,
         "height": 760,
-        "minWidth": 1300,
-        "minHeight": 640,
+        "minWidth": 900,
+        "minHeight": 560,
         "resizable": true,
         "fullscreen": false,
         "decorations": true,
@@ -24,10 +24,10 @@
       }
     ],
     "security": {
-      "csp": null,
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: asset: http://asset.localhost; media-src 'self' asset: http://asset.localhost; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost ws://localhost:5173 https://us.i.posthog.com https://us-assets.i.posthog.com",
       "assetProtocol": {
         "enable": true,
-        "scope": ["**"]
+        "scope": []
       }
     }
   },

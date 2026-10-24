@@ -4,7 +4,6 @@
   import { player } from '../stores/player.svelte'
   import { ui } from '../stores/ui.svelte'
   import type { Song } from '../../types'
-  import { api } from '../api'
   import { getArt } from '../stores/artCache.svelte'
 
   interface Artist {
@@ -50,7 +49,6 @@
   function playArtist(artist: Artist, startSong?: Song) {
     const song = startSong ?? artist.songs[0]
     player.playSong(song, artist.songs)
-    api.invoke('library:update-play', song.id)
   }
 </script>
 

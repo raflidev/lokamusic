@@ -1,4 +1,5 @@
 use std::fs;
+use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 use base64::engine::general_purpose::STANDARD as BASE64;
@@ -12,22 +13,33 @@ use crate::types::Song;
 
 const AUDIO_EXTENSIONS: &[&str] = &["mp3", "flac", "wav", "ogg", "m4a", "aac", "wma", "opus"];
 const MAX_ART_BYTES: usize = 5 * 1024 * 1024;
+const MAX_ART_DIMENSION: u32 = 512;
 
-pub fn collect_audio_files(dir: &Path) -> Vec<PathBuf> {
-    WalkDir::new(dir)
-        .follow_links(false)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().is_file())
-        .filter(|e| {
-            e.path()
-                .extension()
-                .and_then(|ext| ext.to_str())
-                .map(|ext| AUDIO_EXTENSIONS.contains(&ext.to_lowercase().as_str()))
-                .unwrap_or(false)
-        })
-        .map(|e| e.path().to_path_buf())
-        .collect()
+/// Collects audio files and the total size of every file in the directory in
+/// one walk (avoids walking the tree a second time just to compute the size).
+pub fn collect_audio_files(dir: &Path) -> (Vec<PathBuf>, u64) {
+    let mut files = Vec::new();
+    let mut size_bytes = 0u64;
+
+    for entry in WalkDir::new(dir).follow_links(false).into_iter().filter_map(|e| e.ok()) {
+        if !entry.file_type().is_file() {
+            continue;
+        }
+        if let Ok(metadata) = entry.metadata() {
+            size_bytes += metadata.len();
+        }
+        let is_audio = entry
+            .path()
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .map(|ext| AUDIO_EXTENSIONS.contains(&ext.to_lowercase().as_str()))
+            .unwrap_or(false);
+        if is_audio {
+            files.push(entry.path().to_path_buf());
+        }
+    }
+
+    (files, size_bytes)
 }
 
 pub fn read_file_meta(file_path: &Path) -> Song {
@@ -44,7 +56,6 @@ pub fn read_file_meta(file_path: &Path) -> Song {
     let mut artist = "Unknown Artist".to_string();
     let mut album = "Unknown Album".to_string();
     let mut duration = 0.0f64;
-    let mut album_art: Option<String> = None;
     let mut lyrics: Option<String> = None;
 
     let date_added = fs::metadata(file_path)
@@ -74,20 +85,6 @@ pub fn read_file_meta(file_path: &Path) -> Song {
                 album = a.into_owned();
             }
 
-            let cover = tag
-                .pictures()
-                .iter()
-                .find(|p| p.pic_type() == PictureType::CoverFront)
-                .or_else(|| tag.pictures().first());
-
-            if let Some(pic) = cover {
-                if pic.data().len() <= MAX_ART_BYTES {
-                    let mime = pic.mime_type().map(|m| m.to_string()).unwrap_or_else(|| "image/jpeg".to_string());
-                    let b64 = BASE64.encode(pic.data());
-                    album_art = Some(format!("data:{};base64,{}", mime, b64));
-                }
-            }
-
             if let Some(l) = tag.get_string(&ItemKey::Lyrics) {
                 let trimmed = l.trim().to_string();
                 if !trimmed.is_empty() {
@@ -111,11 +108,11 @@ pub fn read_file_meta(file_path: &Path) -> Song {
     Song {
         id,
         path: path_str,
+        folder_id: None,
         title,
         artist,
         album,
         duration,
-        album_art,
         lyrics,
         date_added,
         liked: false,
@@ -135,17 +132,20 @@ pub fn read_song_art(file_path: &Path) -> Option<String> {
     if cover.data().len() > MAX_ART_BYTES {
         return None;
     }
+
+    // Downscale covers before sending them to the webview: full-size art can be
+    // several megabytes of base64 per song, which is far more than the UI needs.
+    if let Ok(image) = image::load_from_memory(cover.data()) {
+        let thumbnail = image.thumbnail(MAX_ART_DIMENSION, MAX_ART_DIMENSION);
+        let mut buffer = Cursor::new(Vec::new());
+        if thumbnail.write_to(&mut buffer, image::ImageFormat::Jpeg).is_ok() {
+            return Some(format!(
+                "data:image/jpeg;base64,{}",
+                BASE64.encode(buffer.into_inner())
+            ));
+        }
+    }
+
     let mime = cover.mime_type().map(|m| m.to_string()).unwrap_or_else(|| "image/jpeg".to_string());
     Some(format!("data:{};base64,{}", mime, BASE64.encode(cover.data())))
-}
-
-pub fn get_folder_size(dir: &Path) -> u64 {
-    WalkDir::new(dir)
-        .follow_links(false)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().is_file())
-        .filter_map(|e| e.metadata().ok())
-        .map(|m| m.len())
-        .sum()
 }

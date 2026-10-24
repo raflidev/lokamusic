@@ -2,6 +2,7 @@
   import Icon from './Icon.svelte'
   import { library } from '../stores/library.svelte'
   import { getArt } from '../stores/artCache.svelte'
+  import { isPathInside } from '../paths'
 
   interface Props {
     folderId: string
@@ -15,7 +16,7 @@
     if (!folder) return []
     const result: string[] = []
     for (const song of library.songs) {
-      if (!song.path.startsWith(folder.path)) continue
+      if (!isPathInside(song.path, folder.path)) continue
       result.push(song.id)
       if (result.length === 4) break
     }

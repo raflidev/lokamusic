@@ -1,10 +1,10 @@
 mod scanner;
 mod types;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
-use std::time::SystemTime;
+use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
+use std::time::{Duration, Instant, SystemTime};
 use discord_rich_presence::{activity, activity::ActivityType, DiscordIpc, DiscordIpcClient};
 use urlencoding::encode as url_encode;
 use serde_json::json;
@@ -78,6 +78,18 @@ impl DiscordState {
     }
 }
 
+static HTTP_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+
+fn http_client() -> &'static reqwest::Client {
+    HTTP_CLIENT.get_or_init(|| {
+        reqwest::Client::builder()
+            .timeout(Duration::from_secs(10))
+            .user_agent(concat!("lokamusic/", env!("CARGO_PKG_VERSION")))
+            .build()
+            .unwrap_or_else(|_| reqwest::Client::new())
+    })
+}
+
 async fn fetch_artwork_url(artist: &str, album: &str) -> String {
     let query = format!("{} {}", artist, album);
     let encoded = url_encode(&query);
@@ -86,7 +98,7 @@ async fn fetch_artwork_url(artist: &str, album: &str) -> String {
         encoded
     );
 
-    let Ok(res) = reqwest::get(&url).await else { return "lokamusic_logo".into() };
+    let Ok(res) = http_client().get(&url).send().await else { return "lokamusic_logo".into() };
     let Ok(json) = res.json::<serde_json::Value>().await else { return "lokamusic_logo".into() };
 
     json["results"][0]["artworkUrl100"]
@@ -97,29 +109,132 @@ async fn fetch_artwork_url(artist: &str, album: &str) -> String {
 
 const STORE_FILE: &str = "config.json";
 
+// Serializes read-modify-write store operations. Without this, concurrent
+// commands (e.g. a scan finishing while the user likes a song) can overwrite
+// each other's changes.
+static STORE_LOCK: Mutex<()> = Mutex::new(());
+
+fn store_guard() -> MutexGuard<'static, ()> {
+    STORE_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+fn save_store_now(app: &tauri::AppHandle) {
+    if let Ok(store) = app.store(STORE_FILE) {
+        if let Err(e) = store.save() {
+            log::error!("failed to save store: {e}");
+        }
+    }
+}
+
 // --- Store helpers ---
 
 fn store_get<T: serde::de::DeserializeOwned>(app: &tauri::AppHandle, key: &str) -> Vec<T> {
-    app.store(STORE_FILE)
-        .ok()
-        .and_then(|s| s.get(key))
-        .and_then(|v| serde_json::from_value(v.clone()).ok())
-        .unwrap_or_default()
+    let store = match app.store(STORE_FILE) {
+        Ok(store) => store,
+        Err(e) => {
+            log::error!("failed to open store: {e}");
+            return Vec::new();
+        }
+    };
+    match store.get(key) {
+        Some(value) => serde_json::from_value(value).unwrap_or_else(|e| {
+            log::error!("failed to deserialize store key '{key}': {e}");
+            Vec::new()
+        }),
+        None => Vec::new(),
+    }
 }
 
 fn store_get_obj<T: serde::de::DeserializeOwned + Default>(app: &tauri::AppHandle, key: &str) -> T {
-    app.store(STORE_FILE)
-        .ok()
-        .and_then(|s| s.get(key))
-        .and_then(|v| serde_json::from_value(v.clone()).ok())
-        .unwrap_or_default()
+    let store = match app.store(STORE_FILE) {
+        Ok(store) => store,
+        Err(e) => {
+            log::error!("failed to open store: {e}");
+            return T::default();
+        }
+    };
+    match store.get(key) {
+        Some(value) => serde_json::from_value(value).unwrap_or_else(|e| {
+            log::error!("failed to deserialize store key '{key}': {e}");
+            T::default()
+        }),
+        None => T::default(),
+    }
 }
 
 fn store_set<T: serde::Serialize>(app: &tauri::AppHandle, key: &str, value: &T) {
-    if let Ok(store) = app.store(STORE_FILE) {
-        store.set(key, serde_json::to_value(value).unwrap_or(json!(null)));
-        let _ = store.save();
+    let store = match app.store(STORE_FILE) {
+        Ok(store) => store,
+        Err(e) => {
+            log::error!("failed to open store: {e}");
+            return;
+        }
+    };
+    match serde_json::to_value(value) {
+        // tauri-plugin-store debounces disk writes (~100ms) on every set, so
+        // there is no need to call save() here for each mutation.
+        Ok(value) => store.set(key, value),
+        Err(e) => log::error!("failed to serialize store key '{key}': {e}"),
     }
+}
+
+/// Grants the asset protocol access to the media the app has stored. The
+/// protocol scope starts empty (see `tauri.conf.json`) so a compromised
+/// renderer cannot read arbitrary files.
+fn allow_asset_directory(app: &tauri::AppHandle, path: impl AsRef<std::path::Path>, recursive: bool) {
+    if let Err(e) = app.asset_protocol_scope().allow_directory(path, recursive) {
+        log::warn!("failed to allow asset directory: {e}");
+    }
+}
+
+fn allow_stored_media(app: &tauri::AppHandle) {
+    let folders: Vec<WatchedFolder> = store_get(app, "folders");
+    for folder in &folders {
+        allow_asset_directory(app, &folder.path, true);
+    }
+
+    // Directly imported songs only need their own parent directory.
+    let songs: Vec<Song> = store_get(app, "songs");
+    let mut imported_dirs: HashSet<String> = HashSet::new();
+    for song in songs.iter().filter(|song| song.folder_id.is_none()) {
+        if let Some(parent) = PathBuf::from(&song.path).parent() {
+            let parent = parent.to_string_lossy().to_string();
+            if imported_dirs.insert(parent.clone()) {
+                allow_asset_directory(app, &parent, false);
+            }
+        }
+    }
+}
+
+// --- Path helpers ---
+
+/// Normalizes separators (and case on Windows) before comparing paths.
+fn normalize_path(path: &str) -> String {
+    let normalized = path.replace('\\', "/");
+    if cfg!(windows) {
+        normalized.to_lowercase()
+    } else {
+        normalized
+    }
+}
+
+/// Returns `true` when `child` is `parent` itself or lives inside it.
+/// Compares path components so `/music/rock` does not match `/music/rockabilly`.
+fn path_is_within(child: &str, parent: &str) -> bool {
+    let child = normalize_path(child);
+    let parent = normalize_path(parent);
+    let parent = parent.trim_end_matches('/');
+    if parent.is_empty() {
+        return true;
+    }
+    child == parent
+        || child
+            .strip_prefix(parent)
+            .is_some_and(|rest| rest.starts_with('/'))
+}
+
+fn paths_equal(a: &str, b: &str) -> bool {
+    normalize_path(a.trim_end_matches('/')) == normalize_path(b.trim_end_matches('/'))
 }
 
 fn now_ms() -> f64 {
@@ -188,55 +303,73 @@ fn library_get_folders(app: tauri::AppHandle) -> Vec<WatchedFolder> {
 #[tauri::command]
 async fn library_add_folder(path: String, app: tauri::AppHandle) -> Result<Option<WatchedFolder>, String> {
     let path = path.replace('\\', "/");
-    let mut folders: Vec<WatchedFolder> = store_get(&app, "folders");
-    if folders.iter().any(|f| f.path == path) {
-        return Ok(None);
-    }
 
-    let id = format!("{:x}", md5::compute(&path));
-    let name = PathBuf::from(&path)
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or(&path)
-        .to_string();
+    let folder = {
+        let _guard = store_guard();
+        let mut folders: Vec<WatchedFolder> = store_get(&app, "folders");
+        if folders.iter().any(|f| paths_equal(&f.path, &path)) {
+            return Ok(None);
+        }
 
-    let folder = WatchedFolder {
-        id: id.clone(),
-        path: path.clone(),
-        name,
-        song_count: 0,
-        size_bytes: 0,
-        last_scanned: None,
+        let id = format!("{:x}", md5::compute(&path));
+        let name = PathBuf::from(&path)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or(&path)
+            .to_string();
+
+        let folder = WatchedFolder {
+            id,
+            path: path.clone(),
+            name,
+            song_count: 0,
+            size_bytes: 0,
+            last_scanned: None,
+        };
+
+        folders.push(folder.clone());
+        store_set(&app, "folders", &folders);
+        folder
     };
 
-    folders.push(folder.clone());
-    store_set(&app, "folders", &folders);
+    allow_asset_directory(&app, &path, true);
 
     let app_clone = app.clone();
+    let folder_id = folder.id.clone();
     tauri::async_runtime::spawn(async move {
-        run_scan(&app_clone, id, path).await;
+        run_scan(&app_clone, folder_id, path).await;
     });
 
     Ok(Some(folder))
 }
 
 #[tauri::command]
-fn library_remove_folder(id: String, app: tauri::AppHandle) -> Result<(), String> {
-    let folders: Vec<WatchedFolder> = store_get(&app, "folders");
-    let folder = folders.iter().find(|f| f.id == id).cloned();
-    let updated_folders: Vec<WatchedFolder> = folders.into_iter().filter(|f| f.id != id).collect();
-    store_set(&app, "folders", &updated_folders);
+async fn library_remove_folder(id: String, app: tauri::AppHandle) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _guard = store_guard();
+        let folders: Vec<WatchedFolder> = store_get(&app, "folders");
+        let folder = folders.iter().find(|f| f.id == id).cloned();
+        let updated_folders: Vec<WatchedFolder> = folders.into_iter().filter(|f| f.id != id).collect();
+        store_set(&app, "folders", &updated_folders);
 
-    if let Some(f) = folder {
-        let songs: Vec<Song> = store_get::<Song>(&app, "songs")
-            .into_iter()
-            .filter(|s| !s.path.starts_with(&f.path))
-            .collect();
-        store_set(&app, "songs", &songs);
-        app.emit("library:songs-updated", &songs).ok();
-    }
+        if let Some(f) = folder {
+            // Songs that belong to this folder are removed. Legacy entries without
+            // a folder id fall back to a component-aware path check.
+            let songs: Vec<Song> = store_get::<Song>(&app, "songs")
+                .into_iter()
+                .filter(|s| match s.folder_id.as_deref() {
+                    Some(folder_id) => folder_id != id,
+                    None => !path_is_within(&s.path, &f.path),
+                })
+                .collect();
+            store_set(&app, "songs", &songs);
+            app.emit("library:songs-updated", &songs).ok();
+        }
 
-    Ok(())
+        Ok(())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -254,66 +387,102 @@ async fn library_scan_folder(id: String, app: tauri::AppHandle) -> Result<(), St
 
 #[tauri::command]
 async fn library_import_files(paths: Vec<String>, app: tauri::AppHandle) -> Result<ImportResult, String> {
-    let mut songs: Vec<Song> = store_get(&app, "songs");
-    let existing_ids: std::collections::HashSet<String> = songs.iter().map(|s| s.id.clone()).collect();
-    let mut added = 0u32;
+    let mut imported: Vec<Song> = Vec::with_capacity(paths.len());
     let mut errors = 0u32;
 
     for path_str in &paths {
         let path = PathBuf::from(path_str);
         match tokio::task::spawn_blocking(move || scanner::read_file_meta(&path)).await {
-            Ok(song) if !existing_ids.contains(&song.id) => {
-                songs.push(song);
-                added += 1;
-            }
+            Ok(song) => imported.push(song),
             Err(_) => errors += 1,
-            _ => {}
         }
     }
 
-    for s in &mut songs { s.album_art = None; }
-    store_set(&app, "songs", &songs);
-    app.emit("library:songs-updated", &songs).ok();
+    let added = tauri::async_runtime::spawn_blocking(move || {
+        let _guard = store_guard();
+        let mut songs: Vec<Song> = store_get(&app, "songs");
+        // Keep this set updated so duplicate paths within the same import are skipped.
+        let mut existing_ids: HashSet<String> = songs.iter().map(|s| s.id.clone()).collect();
+        let folders: Vec<WatchedFolder> = store_get(&app, "folders");
+        let mut added = 0u32;
+        let mut allowed_dirs: HashSet<String> = HashSet::new();
 
-    let mut history: Vec<ScanEvent> = store_get(&app, "scanHistory");
-    history.insert(0, ScanEvent {
-        timestamp: now_ms(),
-        folder_path: "Individual files".to_string(),
-        success: added,
-        errors,
-    });
-    history.truncate(50);
-    store_set(&app, "scanHistory", &history);
+        for mut song in imported {
+            if !existing_ids.insert(song.id.clone()) {
+                continue;
+            }
+            // Imported files that live inside a watched folder still belong to it.
+            song.folder_id = folders
+                .iter()
+                .filter(|f| path_is_within(&song.path, &f.path))
+                .max_by_key(|f| f.path.len())
+                .map(|f| f.id.clone());
+            if let Some(parent) = PathBuf::from(&song.path).parent() {
+                let parent = parent.to_string_lossy().to_string();
+                if allowed_dirs.insert(parent.clone()) {
+                    allow_asset_directory(&app, &parent, false);
+                }
+            }
+            songs.push(song);
+            added += 1;
+        }
+
+        store_set(&app, "songs", &songs);
+        app.emit("library:songs-updated", &songs).ok();
+
+        let mut history: Vec<ScanEvent> = store_get(&app, "scanHistory");
+        history.insert(0, ScanEvent {
+            timestamp: now_ms(),
+            folder_path: "Individual files".to_string(),
+            success: added,
+            errors,
+        });
+        history.truncate(50);
+        store_set(&app, "scanHistory", &history);
+
+        added
+    })
+    .await
+    .map_err(|e| e.to_string())?;
 
     Ok(ImportResult { added, errors })
 }
 
 #[tauri::command]
-fn library_toggle_like(song_id: String, app: tauri::AppHandle) -> Result<bool, String> {
-    let mut songs: Vec<Song> = store_get(&app, "songs");
-    let mut liked = false;
-    for s in &mut songs {
-        if s.id == song_id {
-            s.liked = !s.liked;
-            liked = s.liked;
-            break;
+async fn library_toggle_like(song_id: String, app: tauri::AppHandle) -> Result<bool, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _guard = store_guard();
+        let mut songs: Vec<Song> = store_get(&app, "songs");
+        let mut liked = false;
+        for s in &mut songs {
+            if s.id == song_id {
+                s.liked = !s.liked;
+                liked = s.liked;
+                break;
+            }
         }
-    }
-    store_set(&app, "songs", &songs);
-    Ok(liked)
+        store_set(&app, "songs", &songs);
+        liked
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn library_set_lyrics(song_id: String, lyrics: String, app: tauri::AppHandle) -> Result<(), String> {
-    let mut songs: Vec<Song> = store_get(&app, "songs");
-    for s in &mut songs {
-        if s.id == song_id {
-            s.lyrics = Some(lyrics);
-            break;
+async fn library_set_lyrics(song_id: String, lyrics: String, app: tauri::AppHandle) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _guard = store_guard();
+        let mut songs: Vec<Song> = store_get(&app, "songs");
+        for s in &mut songs {
+            if s.id == song_id {
+                s.lyrics = Some(lyrics);
+                break;
+            }
         }
-    }
-    store_set(&app, "songs", &songs);
-    Ok(())
+        store_set(&app, "songs", &songs);
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -333,7 +502,7 @@ async fn library_fetch_lyrics(
         duration.round() as i64,
     );
 
-    let res = reqwest::get(&url).await.map_err(|e| e.to_string())?;
+    let res = http_client().get(&url).send().await.map_err(|e| e.to_string())?;
     if res.status().as_u16() == 404 {
         return Err("Lyrics not found".to_string());
     }
@@ -348,14 +517,17 @@ async fn library_fetch_lyrics(
         .ok_or_else(|| "No lyrics available".to_string())?
         .to_string();
 
-    let mut songs: Vec<Song> = store_get(&app, "songs");
-    for s in &mut songs {
-        if s.id == song_id {
-            s.lyrics = Some(lyrics.clone());
-            break;
+    {
+        let _guard = store_guard();
+        let mut songs: Vec<Song> = store_get(&app, "songs");
+        for s in &mut songs {
+            if s.id == song_id {
+                s.lyrics = Some(lyrics.clone());
+                break;
+            }
         }
+        store_set(&app, "songs", &songs);
     }
-    store_set(&app, "songs", &songs);
 
     Ok(lyrics)
 }
@@ -363,6 +535,7 @@ async fn library_fetch_lyrics(
 #[tauri::command]
 async fn library_update_play(song_id: String, app: tauri::AppHandle) -> Result<(), String> {
     tokio::task::spawn_blocking(move || {
+        let _guard = store_guard();
         let mut songs: Vec<Song> = store_get(&app, "songs");
         for s in &mut songs {
             if s.id == song_id {
@@ -383,68 +556,90 @@ fn playlist_get_all(app: tauri::AppHandle) -> Vec<Playlist> {
 }
 
 #[tauri::command]
-fn playlist_create(name: String, app: tauri::AppHandle) -> Result<Playlist, String> {
-    let mut playlists: Vec<Playlist> = store_get(&app, "playlists");
-    let playlist = Playlist {
-        id: uuid::Uuid::new_v4().to_string(),
-        name,
-        song_ids: vec![],
-        created_at: now_ms(),
-    };
-    playlists.push(playlist.clone());
-    store_set(&app, "playlists", &playlists);
-    Ok(playlist)
+async fn playlist_create(name: String, app: tauri::AppHandle) -> Result<Playlist, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _guard = store_guard();
+        let mut playlists: Vec<Playlist> = store_get(&app, "playlists");
+        let playlist = Playlist {
+            id: uuid::Uuid::new_v4().to_string(),
+            name,
+            song_ids: vec![],
+            created_at: now_ms(),
+        };
+        playlists.push(playlist.clone());
+        store_set(&app, "playlists", &playlists);
+        playlist
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn playlist_delete(id: String, app: tauri::AppHandle) -> Result<(), String> {
-    let playlists: Vec<Playlist> = store_get::<Playlist>(&app, "playlists")
-        .into_iter()
-        .filter(|p| p.id != id)
-        .collect();
-    store_set(&app, "playlists", &playlists);
-    Ok(())
+async fn playlist_delete(id: String, app: tauri::AppHandle) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _guard = store_guard();
+        let playlists: Vec<Playlist> = store_get::<Playlist>(&app, "playlists")
+            .into_iter()
+            .filter(|p| p.id != id)
+            .collect();
+        store_set(&app, "playlists", &playlists);
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn playlist_rename(id: String, name: String, app: tauri::AppHandle) -> Result<Option<Playlist>, String> {
-    let mut playlists: Vec<Playlist> = store_get(&app, "playlists");
-    let mut found: Option<Playlist> = None;
-    for p in &mut playlists {
-        if p.id == id {
-            p.name = name.clone();
-            found = Some(p.clone());
-            break;
+async fn playlist_rename(id: String, name: String, app: tauri::AppHandle) -> Result<Option<Playlist>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _guard = store_guard();
+        let mut playlists: Vec<Playlist> = store_get(&app, "playlists");
+        let mut found: Option<Playlist> = None;
+        for p in &mut playlists {
+            if p.id == id {
+                p.name = name.clone();
+                found = Some(p.clone());
+                break;
+            }
         }
-    }
-    store_set(&app, "playlists", &playlists);
-    Ok(found)
+        store_set(&app, "playlists", &playlists);
+        found
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn playlist_add_song(playlist_id: String, song_id: String, app: tauri::AppHandle) -> Result<(), String> {
-    let mut playlists: Vec<Playlist> = store_get(&app, "playlists");
-    for p in &mut playlists {
-        if p.id == playlist_id && !p.song_ids.contains(&song_id) {
-            p.song_ids.push(song_id);
-            break;
+async fn playlist_add_song(playlist_id: String, song_id: String, app: tauri::AppHandle) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _guard = store_guard();
+        let mut playlists: Vec<Playlist> = store_get(&app, "playlists");
+        for p in &mut playlists {
+            if p.id == playlist_id && !p.song_ids.contains(&song_id) {
+                p.song_ids.push(song_id);
+                break;
+            }
         }
-    }
-    store_set(&app, "playlists", &playlists);
-    Ok(())
+        store_set(&app, "playlists", &playlists);
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-fn playlist_remove_song(playlist_id: String, song_id: String, app: tauri::AppHandle) -> Result<(), String> {
-    let mut playlists: Vec<Playlist> = store_get(&app, "playlists");
-    for p in &mut playlists {
-        if p.id == playlist_id {
-            p.song_ids.retain(|id| id != &song_id);
-            break;
+async fn playlist_remove_song(playlist_id: String, song_id: String, app: tauri::AppHandle) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _guard = store_guard();
+        let mut playlists: Vec<Playlist> = store_get(&app, "playlists");
+        for p in &mut playlists {
+            if p.id == playlist_id {
+                p.song_ids.retain(|id| id != &song_id);
+                break;
+            }
         }
-    }
-    store_set(&app, "playlists", &playlists);
-    Ok(())
+        store_set(&app, "playlists", &playlists);
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -482,16 +677,58 @@ fn close_miniplayer(app: tauri::AppHandle) {
 }
 
 fn open_tray_popover(app: &tauri::AppHandle, rect: tauri::Rect) {
-    use tauri::{WebviewWindowBuilder, WebviewUrl};
+    use tauri::{LogicalPosition, WebviewWindowBuilder, WebviewUrl};
 
     const WIDTH: f64 = 300.0;
     const HEIGHT: f64 = 190.0;
+    const MARGIN: f64 = 6.0;
 
-    let scale = app.primary_monitor().ok().flatten().map(|m| m.scale_factor()).unwrap_or(1.0);
+    // The tray rect is physical; locate the monitor under the icon so the
+    // popover is positioned correctly on multi-monitor / mixed-DPI setups.
+    let primary_scale = app
+        .primary_monitor()
+        .ok()
+        .flatten()
+        .map(|m| m.scale_factor())
+        .unwrap_or(1.0);
+    let icon_physical = rect.position.to_physical::<f64>(primary_scale);
+    let monitor = app
+        .get_webview_window("main")
+        .and_then(|w| w.monitor_from_point(icon_physical.x, icon_physical.y).ok().flatten())
+        .or_else(|| app.primary_monitor().ok().flatten());
+
+    let scale = monitor.as_ref().map(|m| m.scale_factor()).unwrap_or(primary_scale);
+    let monitor_pos = monitor
+        .as_ref()
+        .map(|m| m.position().to_logical::<f64>(scale))
+        .unwrap_or_else(|| LogicalPosition::new(0.0, 0.0));
+    let monitor_size = monitor
+        .as_ref()
+        .map(|m| m.size().to_logical::<f64>(scale))
+        .unwrap_or_else(|| tauri::LogicalSize::new(WIDTH, HEIGHT));
+
     let icon_pos = rect.position.to_logical::<f64>(scale);
     let icon_size = rect.size.to_logical::<f64>(scale);
-    let x = icon_pos.x + icon_size.width / 2.0 - WIDTH / 2.0;
-    let y = icon_pos.y + icon_size.height + 4.0;
+
+    let mut x = icon_pos.x + icon_size.width / 2.0 - WIDTH / 2.0;
+    let mut y = icon_pos.y + icon_size.height + 4.0;
+
+    // If the tray sits at the bottom of the screen, open the popover above it.
+    if y + HEIGHT > monitor_pos.y + monitor_size.height - MARGIN {
+        y = icon_pos.y - HEIGHT - 4.0;
+    }
+
+    let min_x = monitor_pos.x + MARGIN;
+    let max_x = monitor_pos.x + monitor_size.width - WIDTH - MARGIN;
+    if max_x >= min_x {
+        x = x.clamp(min_x, max_x);
+    }
+
+    let min_y = monitor_pos.y + MARGIN;
+    let max_y = monitor_pos.y + monitor_size.height - HEIGHT - MARGIN;
+    if max_y >= min_y {
+        y = y.clamp(min_y, max_y);
+    }
 
     let builder = WebviewWindowBuilder::new(app, "tray-popover", WebviewUrl::App("index.html".into()))
         .title("lokamusic")
@@ -562,14 +799,51 @@ fn settings_get(app: tauri::AppHandle) -> Settings {
 }
 
 #[tauri::command]
+async fn settings_set_playback(
+    volume: f64,
+    shuffle: bool,
+    repeat: String,
+    app: tauri::AppHandle,
+) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _guard = store_guard();
+        let mut settings: Settings = store_get_obj(&app, "settings");
+        settings.volume = volume.clamp(0.0, 1.0);
+        settings.shuffle = shuffle;
+        settings.repeat = match repeat.as_str() {
+            "one" | "all" => repeat,
+            _ => "none".to_string(),
+        };
+        store_set(&app, "settings", &settings);
+    })
+    .await
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn settings_set_analytics(enabled: bool, app: tauri::AppHandle) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let _guard = store_guard();
+        let mut settings: Settings = store_get_obj(&app, "settings");
+        settings.analytics = enabled;
+        store_set(&app, "settings", &settings);
+    })
+    .await
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 async fn settings_set_discord_presence(
     enabled: bool,
     app: tauri::AppHandle,
     discord: tauri::State<'_, Arc<Mutex<DiscordState>>>,
 ) -> Result<(), String> {
-    let mut settings: Settings = store_get_obj(&app, "settings");
-    settings.discord_presence = enabled;
-    store_set(&app, "settings", &settings);
+    {
+        let _guard = store_guard();
+        let mut settings: Settings = store_get_obj(&app, "settings");
+        settings.discord_presence = enabled;
+        store_set(&app, "settings", &settings);
+    }
 
     if !enabled {
         let arc = Arc::clone(&discord);
@@ -621,6 +895,10 @@ async fn discord_update_presence(
                     None => {
                         let url = fetch_artwork_url(&artist, &album).await;
                         if let Ok(mut d) = discord.lock() {
+                            // Keep the artwork cache bounded during long sessions.
+                            if d.artwork_cache.len() >= 256 {
+                                d.artwork_cache.clear();
+                            }
                             d.artwork_cache.insert(cache_key, url.clone());
                         }
                         url
@@ -664,19 +942,23 @@ async fn run_scan(app: &tauri::AppHandle, folder_id: String, folder_path: String
     let folder_id_for_scan = folder_id.clone();
 
     let scan_handle = tokio::task::spawn_blocking(move || {
-        let files = scanner::collect_audio_files(&path);
+        let (files, size_bytes) = scanner::collect_audio_files(&path);
         let total = files.len() as u32;
         let mut songs: Vec<Song> = Vec::with_capacity(files.len());
-        let errors = 0u32;
+        let mut last_report = Instant::now();
 
         for (i, file) in files.iter().enumerate() {
             songs.push(scanner::read_file_meta(file));
             let scanned = (i + 1) as u32;
-            let percent = scanned * 100 / total.max(1);
-            let _ = tx.blocking_send((scanned, total, percent));
+            // Coalesce progress updates instead of emitting one event per file.
+            if scanned == total || scanned % 25 == 0 || last_report.elapsed() >= Duration::from_millis(100) {
+                let percent = scanned * 100 / total.max(1);
+                let _ = tx.blocking_send((scanned, total, percent));
+                last_report = Instant::now();
+            }
         }
 
-        (songs, errors)
+        (songs, size_bytes)
     });
 
     while let Some((scanned, total, percent)) = rx.recv().await {
@@ -688,7 +970,7 @@ async fn run_scan(app: &tauri::AppHandle, folder_id: String, folder_path: String
         }).ok();
     }
 
-    let (new_songs, errors) = match scan_handle.await {
+    let (new_songs, size_bytes) = match scan_handle.await {
         Ok(r) => r,
         Err(_) => {
             app.emit("library:scan-complete", ScanCompletePayload {
@@ -700,95 +982,180 @@ async fn run_scan(app: &tauri::AppHandle, folder_id: String, folder_path: String
         }
     };
 
-    // Merge: preserve liked/playCount/lastPlayed from existing songs
-    let existing: Vec<Song> = store_get(app, "songs");
-    let existing_map: HashMap<String, Song> = existing.into_iter().map(|s| (s.id.clone(), s)).collect();
+    // Merge: preserve liked/playCount/lastPlayed from existing songs. If the
+    // folder was removed while scanning, discard the result instead of
+    // resurrecting its songs.
+    let errors = 0u32;
+    let merge_result = {
+        let _guard = store_guard();
+        let mut folders: Vec<WatchedFolder> = store_get(app, "folders");
 
-    let kept: Vec<Song> = existing_map.values()
-        .filter(|s| !s.path.starts_with(&folder_path))
-        .cloned()
-        .collect();
+        if !folders.iter().any(|f| f.id == folder_id_for_scan) {
+            None
+        } else {
+            let existing: Vec<Song> = store_get(app, "songs");
+            let existing_map: HashMap<String, Song> = existing.into_iter().map(|s| (s.id.clone(), s)).collect();
 
-    let updated: Vec<Song> = new_songs.into_iter().map(|mut s| {
-        if let Some(prev) = existing_map.get(&s.id) {
-            s.liked = prev.liked;
-            s.play_count = prev.play_count;
-            s.last_played = prev.last_played;
+            let kept: Vec<Song> = existing_map.values()
+                .filter(|s| match s.folder_id.as_deref() {
+                    Some(folder_id) => folder_id != folder_id_for_scan,
+                    None => !path_is_within(&s.path, &folder_path),
+                })
+                .cloned()
+                .collect();
+
+            let updated: Vec<Song> = new_songs.into_iter().map(|mut s| {
+                s.folder_id = Some(folder_id_for_scan.clone());
+                if let Some(prev) = existing_map.get(&s.id) {
+                    s.liked = prev.liked;
+                    s.play_count = prev.play_count;
+                    s.last_played = prev.last_played;
+                }
+                s
+            }).collect();
+
+            let mut merged = kept;
+            merged.extend(updated);
+            store_set(app, "songs", &merged);
+
+            let song_count = merged.iter()
+                .filter(|s| s.folder_id.as_deref() == Some(folder_id_for_scan.as_str()))
+                .count() as u32;
+            for f in &mut folders {
+                if f.id == folder_id_for_scan {
+                    f.song_count = song_count;
+                    f.size_bytes = size_bytes;
+                    f.last_scanned = Some(now_ms());
+                    break;
+                }
+            }
+            store_set(app, "folders", &folders);
+
+            let mut history: Vec<ScanEvent> = store_get(app, "scanHistory");
+            history.insert(0, ScanEvent {
+                timestamp: now_ms(),
+                folder_path: folder_path.clone(),
+                success: song_count,
+                errors,
+            });
+            history.truncate(50);
+            store_set(app, "scanHistory", &history);
+
+            Some((merged, folders))
         }
-        s
-    }).collect();
+    };
 
-    let mut merged = kept;
-    merged.extend(updated);
-
-    for s in &mut merged { s.album_art = None; }
-    store_set(app, "songs", &merged);
-
-    let size_bytes = scanner::get_folder_size(&PathBuf::from(&folder_path));
-    let mut folders: Vec<WatchedFolder> = store_get(app, "folders");
-    let song_count = merged.iter().filter(|s| s.path.starts_with(&folder_path)).count() as u32;
-    for f in &mut folders {
-        if f.id == folder_id_for_scan {
-            f.song_count = song_count;
-            f.size_bytes = size_bytes;
-            f.last_scanned = Some(now_ms());
-            break;
-        }
-    }
-    store_set(app, "folders", &folders);
-
-    let mut history: Vec<ScanEvent> = store_get(app, "scanHistory");
-    history.insert(0, ScanEvent {
-        timestamp: now_ms(),
-        folder_path: folder_path.clone(),
-        success: song_count,
-        errors,
-    });
-    history.truncate(50);
-    store_set(app, "scanHistory", &history);
+    let (songs, folders) = match merge_result {
+        Some(result) => result,
+        None => (store_get(app, "songs"), store_get(app, "folders")),
+    };
 
     app.emit("library:scan-complete", ScanCompletePayload {
         folder_id: folder_id_for_scan,
-        songs: merged,
+        songs,
         folders,
     }).ok();
 }
 
 // --- App setup ---
 
-fn purge_orphan_songs(app: &tauri::AppHandle) {
-    let folders: Vec<WatchedFolder> = store_get(app, "folders");
-    let songs: Vec<Song> = store_get::<Song>(app, "songs")
-        .into_iter()
-        .filter(|s| folders.iter().any(|f| s.path.starts_with(&f.path)))
-        .collect();
-    store_set(app, "songs", &songs);
+/// One-time normalization performed on startup:
+/// - assigns `folder_id` to songs stored by older versions,
+/// - drops songs belonging to folders that no longer exist (directly imported
+///   songs have no folder and are kept),
+/// - rewrites the store without the legacy base64 `albumArt` payload.
+fn migrate_library(app: &tauri::AppHandle) {
+    const SCHEMA_VERSION: u64 = 2;
+
+    let _guard = store_guard();
+    let store = match app.store(STORE_FILE) {
+        Ok(store) => store,
+        Err(e) => {
+            log::error!("failed to open store: {e}");
+            return;
+        }
+    };
+    let version = store.get("schemaVersion").and_then(|v| v.as_u64()).unwrap_or(0);
+    if version >= SCHEMA_VERSION {
+        return;
+    }
+
+    let folders: Vec<WatchedFolder> = match store.get("folders") {
+        Some(value) => match serde_json::from_value(value) {
+            Ok(folders) => folders,
+            Err(e) => {
+                log::error!("failed to deserialize folders, skipping migration: {e}");
+                return;
+            }
+        },
+        None => Vec::new(),
+    };
+    let songs: Vec<Song> = match store.get("songs") {
+        Some(value) => match serde_json::from_value(value) {
+            Ok(songs) => songs,
+            Err(e) => {
+                log::error!("failed to deserialize songs, skipping migration: {e}");
+                return;
+            }
+        },
+        None => Vec::new(),
+    };
+    let mut normalized: Vec<Song> = Vec::with_capacity(songs.len());
+
+    for mut song in songs {
+        if song.folder_id.is_none() {
+            song.folder_id = folders
+                .iter()
+                .filter(|f| path_is_within(&song.path, &f.path))
+                .max_by_key(|f| f.path.len())
+                .map(|f| f.id.clone());
+        }
+
+        let keep = match song.folder_id.as_deref() {
+            Some(folder_id) => folders.iter().any(|f| f.id == folder_id),
+            // Directly imported songs do not belong to a watched folder.
+            None => true,
+        };
+        if keep {
+            normalized.push(song);
+        }
+    }
+
+    store_set(app, "songs", &normalized);
+    store.set("schemaVersion", json!(SCHEMA_VERSION));
 }
 
 fn ensure_store_defaults(app: &tauri::AppHandle) {
     if let Ok(store) = app.store(STORE_FILE) {
-        if store.get("songs").is_none() {
+        if !store.has("songs") {
             store.set("songs", json!([]));
         }
-        if store.get("folders").is_none() {
+        if !store.has("folders") {
             store.set("folders", json!([]));
         }
-        if store.get("scanHistory").is_none() {
+        if !store.has("scanHistory") {
             store.set("scanHistory", json!([]));
         }
-        if store.get("playlists").is_none() {
+        if !store.has("playlists") {
             store.set("playlists", json!([]));
         }
-        if store.get("settings").is_none() {
+        if !store.has("settings") {
             store.set("settings", serde_json::to_value(Settings::default()).unwrap_or(json!({})));
         }
-        let _ = store.save();
     }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
+        // Must be the first plugin registered.
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .manage(Arc::new(Mutex::new(DiscordState::new())))
         .plugin(tauri_plugin_updater::Builder::default().build())
         .plugin(tauri_plugin_process::init())
@@ -797,7 +1164,8 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             ensure_store_defaults(app.handle());
-            purge_orphan_songs(app.handle());
+            migrate_library(app.handle());
+            allow_stored_media(app.handle());
 
             let now_playing_item = IconMenuItem::with_id(app, "now-playing", "Not Playing", false, None, None::<&str>)?;
             let separator1 = PredefinedMenuItem::separator(app)?;
@@ -866,12 +1234,46 @@ pub fn run() {
             playlist_add_song,
             playlist_remove_song,
             settings_get,
+            settings_set_playback,
+            settings_set_analytics,
             settings_set_discord_presence,
             discord_update_presence,
             open_miniplayer,
             close_miniplayer,
             tray_set_now_playing,
         ])
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .expect("error while running tauri application");
+
+    app.run(|app_handle, event| {
+        // Persist any debounced store changes before the process exits.
+        if matches!(event, tauri::RunEvent::Exit) {
+            save_store_now(app_handle);
+        }
+    });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{path_is_within, paths_equal};
+
+    #[test]
+    fn path_is_within_matches_components_only() {
+        assert!(path_is_within("/music/rock/song.mp3", "/music/rock"));
+        assert!(path_is_within("/music/rock", "/music/rock"));
+        assert!(!path_is_within("/music/rockabilly/song.mp3", "/music/rock"));
+        assert!(!path_is_within("/music", "/music/rock"));
+    }
+
+    #[test]
+    fn path_is_within_ignores_trailing_separators() {
+        assert!(path_is_within("/music/rock/song.mp3", "/music/rock/"));
+        assert!(path_is_within("/music/rock/song.mp3", "/music/rock//"));
+    }
+
+    #[test]
+    fn paths_equal_ignores_trailing_separators() {
+        assert!(paths_equal("/music/rock", "/music/rock/"));
+        assert!(!paths_equal("/music/rock", "/music/rockabilly"));
+    }
 }

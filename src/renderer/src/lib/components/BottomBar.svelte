@@ -76,13 +76,13 @@
         >
           <Icon name="shuffle" size={15} />
         </button>
-        <button class="ctrl-btn" onclick={() => player.prev()} disabled={player.isLoading} title="Previous">
+        <button class="ctrl-btn" onclick={() => player.prev()} title="Previous">
           <Icon name="skip-back" size={18} />
         </button>
         <button class="play-btn" onclick={() => player.togglePlay()} title={player.isPlaying ? 'Pause' : 'Play'}>
           <Icon name={player.isPlaying ? 'pause' : 'play'} size={18} />
         </button>
-        <button class="ctrl-btn" onclick={() => player.next()} disabled={player.isLoading} title="Next">
+        <button class="ctrl-btn" onclick={() => player.next()} title="Next">
           <Icon name="skip-forward" size={18} />
         </button>
         <button

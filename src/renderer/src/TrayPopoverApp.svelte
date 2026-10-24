@@ -18,7 +18,8 @@
   let currentTime = $state(0)
   let duration = $state(1)
 
-  let unlisten: UnlistenFn | null = null
+  let unlistenState: UnlistenFn | null = null
+  let unlistenProgress: UnlistenFn | null = null
 
   const pct = $derived(duration > 0 ? (currentTime / duration) * 100 : 0)
 
@@ -45,16 +46,16 @@
   }
 
   onMount(async () => {
-    unlisten = await listen<{
+    unlistenState = await listen<{
       song: MiniSong | null
       isPlaying: boolean
       isLoading: boolean
-      currentTime: number
-      duration: number
     }>('miniplayer:state', (e) => {
       song = e.payload.song
       isPlaying = e.payload.isPlaying
       isLoading = e.payload.isLoading
+    })
+    unlistenProgress = await listen<{ currentTime: number; duration: number }>('miniplayer:progress', (e) => {
       currentTime = e.payload.currentTime
       duration = e.payload.duration || 1
     })
@@ -63,7 +64,8 @@
   })
 
   onDestroy(() => {
-    unlisten?.()
+    unlistenState?.()
+    unlistenProgress?.()
     window.removeEventListener('blur', closeWindow)
   })
 </script>
@@ -84,13 +86,13 @@
   </div>
 
   <div class="controls">
-    <button class="ctrl-btn" onclick={() => sendCmd('prev')} disabled={isLoading} title="Previous">
+    <button class="ctrl-btn" onclick={() => sendCmd('prev')} title="Previous">
       <Icon name="skip-back" size={18} />
     </button>
     <button class="play-btn" onclick={() => sendCmd('toggle-play')} title={isPlaying ? 'Pause' : 'Play'}>
       <Icon name={isPlaying ? 'pause' : 'play'} size={20} />
     </button>
-    <button class="ctrl-btn" onclick={() => sendCmd('next')} disabled={isLoading} title="Next">
+    <button class="ctrl-btn" onclick={() => sendCmd('next')} title="Next">
       <Icon name="skip-forward" size={18} />
     </button>
   </div>

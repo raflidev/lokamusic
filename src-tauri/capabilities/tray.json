@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "tray-popover",
+  "description": "Tray popover window permissions",
+  "windows": ["tray-popover"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-close"
+  ]
+}

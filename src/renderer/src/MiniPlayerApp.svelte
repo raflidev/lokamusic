@@ -15,11 +15,14 @@
     song: MiniSong | null
     isPlaying: boolean
     isLoading: boolean
-    currentTime: number
-    duration: number
     liked: boolean
     shuffle: boolean
     repeat: 'none' | 'one' | 'all'
+  }
+
+  interface PlayerProgress {
+    currentTime: number
+    duration: number
     volume: number
   }
 
@@ -46,6 +49,7 @@
   let volDragStartVal = 0
 
   let unlistenPs: UnlistenFn | null = null
+  let unlistenProgress: UnlistenFn | null = null
 
   const displayPct = $derived(ps.duration > 0 ? (ps.currentTime / ps.duration) * 100 : 0)
 
@@ -59,18 +63,21 @@
       ps.song = d.song
       ps.isPlaying = d.isPlaying
       ps.isLoading = d.isLoading
-      ps.currentTime = d.currentTime
-      ps.duration = d.duration
       ps.liked = d.liked
       ps.shuffle = d.shuffle
       ps.repeat = d.repeat
-      if (!volDragging) ps.volume = d.volume
+    })
+    unlistenProgress = await listen<PlayerProgress>('miniplayer:progress', (e) => {
+      ps.currentTime = e.payload.currentTime
+      ps.duration = e.payload.duration || 1
+      if (!volDragging) ps.volume = e.payload.volume
     })
     await emit('miniplayer:request-state', null)
   })
 
   onDestroy(() => {
     unlistenPs?.()
+    unlistenProgress?.()
     window.removeEventListener('mousemove', doVolDrag)
     window.removeEventListener('mouseup', endVolDrag)
   })
@@ -191,13 +198,13 @@
               <Icon name={volIcon} size={15} />
             </div>
           </div>
-          <button class="ov-btn" onclick={() => sendCmd('prev')} disabled={ps.isLoading} title="Previous">
+          <button class="ov-btn" onclick={() => sendCmd('prev')} title="Previous">
             <Icon name="skip-back" size={18} />
           </button>
           <button class="play-circle" onclick={() => sendCmd('toggle-play')} title={ps.isPlaying ? 'Pause' : 'Play'}>
             <Icon name={ps.isPlaying ? 'pause' : 'play'} size={18} />
           </button>
-          <button class="ov-btn" onclick={() => sendCmd('next')} disabled={ps.isLoading} title="Next">
+          <button class="ov-btn" onclick={() => sendCmd('next')} title="Next">
             <Icon name="skip-forward" size={18} />
           </button>
           <button

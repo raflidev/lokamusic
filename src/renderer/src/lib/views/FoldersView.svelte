@@ -5,6 +5,7 @@
   import { ui } from '../stores/ui.svelte'
   import type { WatchedFolder } from '../../types'
   import { api } from '../api'
+  import { focusOnMount } from '../actions'
 
   let folderToRemove = $state<WatchedFolder | null>(null)
 
@@ -27,6 +28,12 @@
     if (!path) return
     const folder = await api.invoke('library:add-folder', path) as WatchedFolder | null
     if (folder) library.addFolder(folder)
+  }
+
+  async function importFiles() {
+    const paths = await api.invoke('dialog:select-files') as string[]
+    if (!paths || paths.length === 0) return
+    await api.invoke('library:import-files', paths)
   }
 
   async function rescanFolder(id: string) {
@@ -59,6 +66,9 @@
       <div class="hero-actions">
         <button class="scan-btn" onclick={scanNewFolder}>
           Scan New Folder <Icon name="arrow-right" size={16} />
+        </button>
+        <button class="import-btn" onclick={importFiles}>
+          Import Files <Icon name="plus" size={16} />
         </button>
       </div>
     </div>
@@ -149,8 +159,13 @@
 </div>
 
 {#if folderToRemove}
-  <div class="modal-backdrop" onclick={() => folderToRemove = null} role="presentation">
-    <div class="modal" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+  <div
+    class="modal-backdrop"
+    role="presentation"
+    onclick={(e) => { if (e.target === e.currentTarget) folderToRemove = null }}
+    onkeydown={(e) => { if (e.key === 'Escape') folderToRemove = null }}
+  >
+    <div class="modal" role="dialog" aria-modal="true" tabindex="-1" use:focusOnMount>
       <div class="modal-icon"><Icon name="trash" size={22} /></div>
       <h3 class="modal-title">Remove Folder</h3>
       <p class="modal-body">
@@ -252,7 +267,28 @@
     white-space: nowrap;
   }
 
-  .scan-btn:hover { background: var(--tertiary); }
+  .scan-btn:hover { background: var(--secondary-container); }
+
+  .import-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: var(--surface-container);
+    color: var(--on-surface);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--radius-lg);
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.12s, border-color 0.12s;
+    white-space: nowrap;
+  }
+
+  .import-btn:hover {
+    background: var(--surface-container-high);
+    border-color: var(--outline);
+  }
 
 
   /* Scan card */
@@ -321,14 +357,6 @@
     letter-spacing: -0.01em;
     color: var(--on-surface);
   }
-
-  .link-btn {
-    font-size: 13px;
-    color: var(--secondary);
-    transition: opacity 0.12s;
-  }
-
-  .link-btn:hover { opacity: 0.8; }
 
   .folders-grid {
     display: grid;

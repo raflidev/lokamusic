@@ -147,7 +147,7 @@
           <div class="card-back">
             <div class="lyrics-panel">
               <div class="lyrics-toolbar">
-                <button class="art-toggle" onclick={() => showLyrics = false} title="Kembali ke album art">
+                <button class="art-toggle" onclick={() => showLyrics = false} title="Back to album art">
                   <Icon name="arrow-right" size={14} />
                 </button>
                 {#if hasLyrics}
@@ -160,14 +160,15 @@
                 {#if isLrc}
                   <div class="lyrics-scroll lrc-scroll" bind:this={lrcContainer}>
                     {#each lrcLines as line, i}
-                      <p
+                      <button
+                        type="button"
                         bind:this={lineEls[i]}
                         class="lrc-line"
                         class:lrc-past={i < currentLineIdx}
                         class:lrc-active={i === currentLineIdx}
                         class:lrc-future={i > currentLineIdx}
                         onclick={() => player.seek(line.time)}
-                      >{line.text}</p>
+                      >{line.text}</button>
                     {/each}
                   </div>
                 {:else}
@@ -199,7 +200,7 @@
     <!-- Lyrics fullscreen overlay -->
     {#if lyricsFullscreen}
       <div class="lyrics-fullscreen">
-        <button class="fs-close" onclick={() => lyricsFullscreen = false} title="Tutup">
+        <button class="fs-close" onclick={() => lyricsFullscreen = false} title="Close">
           <Icon name="expand" size={18} />
         </button>
         <div class="fs-song-info">
@@ -209,14 +210,15 @@
         <div class="fs-lyrics-scroll" bind:this={lrcFsContainer}>
           {#if isLrc}
             {#each lrcLines as line, i}
-              <p
+              <button
+                type="button"
                 bind:this={lineElsFs[i]}
                 class="fs-lrc-line"
                 class:fs-lrc-past={i < currentLineIdx}
                 class:fs-lrc-active={i === currentLineIdx}
                 class:fs-lrc-future={i > currentLineIdx}
                 onclick={() => player.seek(line.time)}
-              >{line.text}</p>
+              >{line.text}</button>
             {/each}
           {:else}
             <p class="fs-lyrics-text">{player.currentSong?.lyrics}</p>
@@ -557,6 +559,8 @@
   }
 
   .lrc-line {
+    display: block;
+    width: 100%;
     font-size: 14px;
     font-weight: 500;
     line-height: 1.5;
@@ -656,6 +660,8 @@
   }
 
   .fs-lrc-line {
+    display: block;
+    width: 100%;
     font-size: 16px;
     font-weight: 500;
     line-height: 1.5;

@@ -6,6 +6,7 @@
   import { playlistStore } from '../stores/playlists.svelte'
   import type { Playlist } from '../../types'
   import { api } from '../api'
+  import { focusOnMount } from '../actions'
 
   const navItems: { view: View; icon: string; label: string }[] = [
     { view: 'library', icon: 'library', label: 'Library' },
@@ -109,7 +110,7 @@
             if (e.key === 'Escape') cancelCreate()
           }}
           onblur={confirmCreatePlaylist}
-          autofocus
+          use:focusOnMount
         />
       </div>
     {/if}
@@ -171,19 +172,6 @@
     gap: 10px;
     -webkit-app-region: drag;
     cursor: default;
-  }
-
-  .logo-img {
-    width: 26px;
-    height: 26px;
-    object-fit: cover;
-    border-radius: var(--radius);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--outline-variant);
-    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .logo:hover .logo-img {
-    transform: scale(1.08) rotate(15deg);
   }
 
   .nav {

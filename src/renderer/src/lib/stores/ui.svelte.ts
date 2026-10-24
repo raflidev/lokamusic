@@ -7,6 +7,20 @@ export interface ScanProgress {
   percent: number
 }
 
+function loadPinnedFolders(): { path: string; name: string }[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem('lokamusic:pinnedFolders') ?? '[]')
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(
+      (item): item is { path: string; name: string } =>
+        !!item && typeof item.path === 'string' && typeof item.name === 'string'
+    )
+  } catch {
+    // Corrupted localStorage should never prevent the app from starting.
+    return []
+  }
+}
+
 let currentView = $state<View>('library')
 let scanProgress = $state<ScanProgress | null>(null)
 let searchQuery = $state('')
@@ -16,9 +30,7 @@ let pendingArtistName = $state<string | null>(null)
 let pendingAlbumKey = $state<string | null>(null)
 let showQueue = $state(false)
 let selectedSubFolderPath = $state<string | null>(null)
-let pinnedFolders = $state<{ path: string; name: string }[]>(
-  JSON.parse(localStorage.getItem('lokamusic:pinnedFolders') ?? '[]')
-)
+let pinnedFolders = $state<{ path: string; name: string }[]>(loadPinnedFolders())
 
 export const ui = {
   get currentView() { return currentView },
